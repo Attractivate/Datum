@@ -1,26 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Chivo:wght@400;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Sans+3:wght@400;600&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --ground: #F4F5FA;
+  --surface: #FFFFFF;
+  --sunk: #E9EBF5;
+  --ink: #1C0140;
+  --muted: #5A5D78;
+  --hair: #D6D9E8;
+  --azure: #376BE9;
+  --azure-ink: #FFFFFF;
+  --azure-sub: #E4EBFC;
+  --brass: #8A6A12;
+  --brass-bg: #FAF2DC;
+  --shadow: 0 1px 2px rgba(28,1,64,.06);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme="light"]) {
+    --ground: #0E0A1C;
+    --surface: #17112B;
+    --sunk: #1F1836;
+    --ink: #E8E7F2;
+    --muted: #9A97B4;
+    --hair: #2E2748;
+    --azure: #6E9BF7;
+    --azure-ink: #0B1330;
+    --azure-sub: #1A2547;
+    --brass: #D8AE4C;
+    --brass-bg: #2A2415;
+    --shadow: 0 1px 2px rgba(0,0,0,.3);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+:root[data-theme="dark"] {
+  --ground: #0E0A1C;
+  --surface: #17112B;
+  --sunk: #1F1836;
+  --ink: #E8E7F2;
+  --muted: #9A97B4;
+  --hair: #2E2748;
+  --azure: #6E9BF7;
+  --azure-ink: #0B1330;
+  --azure-sub: #1A2547;
+  --brass: #D8AE4C;
+  --brass-bg: #2A2415;
+  --shadow: 0 1px 2px rgba(0,0,0,.3);
 }
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--azure); outline-offset: 2px; }
