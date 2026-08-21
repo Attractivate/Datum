@@ -110,7 +110,7 @@ export default function ProjectsList() {
         {/* Industry Filter */}
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem' }}>
           <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', letterSpacing: '0.13em', textTransform: 'uppercase', color: '#5A5D78', width: '4.6rem', flexShrink: 0 }}>Industry</span>
-          {[{ label: 'All', val: 'all' }, { label: 'Power Generation', val: 'Power Generation' }, { label: 'Power Delivery', val: 'Power Delivery' }, { label: 'Oil & Gas', val: 'Oil & Gas' }, { label: 'Hi Tech', val: 'Hi Tech' }, { label: 'Life Sciences', val: 'Life Sciences' }].map(({ label, val }) => (
+          {[{ label: 'All', val: 'all', count: '4,081' }, { label: 'Power Generation', val: 'Power Generation', count: '1,842' }, { label: 'Power Delivery', val: 'Power Delivery', count: '654' }, { label: 'Oil & Gas', val: 'Oil & Gas', count: '892' }, { label: 'Hi Tech', val: 'Hi Tech', count: '425' }, { label: 'Life Sciences', val: 'Life Sciences', count: '168' }].map(({ label, val, count }) => (
             <button
               key={val}
               onClick={() => setFilters({ ...filters, ind: val })}
@@ -124,7 +124,7 @@ export default function ProjectsList() {
               onMouseEnter={(e) => { if (filters.ind !== val) e.currentTarget.style.borderColor = '#376BE9' }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent' }}
             >
-              {label}
+              {label} <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.66rem', color: filters.ind === val ? 'rgba(255,255,255,.75)' : '#5A5D78' }}>{count}</span>
             </button>
           ))}
         </div>
@@ -132,7 +132,7 @@ export default function ProjectsList() {
         {/* Capacity Filter */}
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem' }}>
           <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', letterSpacing: '0.13em', textTransform: 'uppercase', color: '#5A5D78', width: '4.6rem', flexShrink: 0 }}>Capacity</span>
-          {[{ label: 'Any', val: 'all' }, { label: 'Under 100 MW', val: '0-100' }, { label: '100–250 MW', val: '100-250' }, { label: '250–500 MW', val: '250-500' }, { label: '500 MW–1 GW', val: '500-1000' }, { label: '1 GW+', val: '1000-' }].map(({ label, val }) => (
+          {[{ label: 'Any', val: 'all', count: '3,723' }, { label: 'Under 100 MW', val: '0-100', count: '456' }, { label: '100–250 MW', val: '100-250', count: '623' }, { label: '250–500 MW', val: '250-500', count: '734' }, { label: '500 MW–1 GW', val: '500-1000', count: '892' }, { label: '1 GW+', val: '1000-', count: '358' }].map(({ label, val, count }) => (
             <button
               key={val}
               onClick={() => setFilters({ ...filters, mw: val })}
@@ -146,7 +146,7 @@ export default function ProjectsList() {
               onMouseEnter={(e) => { if (filters.mw !== val) e.currentTarget.style.borderColor = '#376BE9' }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent' }}
             >
-              {label}
+              {label} <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.66rem', color: filters.mw === val ? 'rgba(255,255,255,.75)' : '#5A5D78' }}>{count}</span>
             </button>
           ))}
         </div>
@@ -154,7 +154,7 @@ export default function ProjectsList() {
         {/* Stage Filter */}
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem' }}>
           <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', letterSpacing: '0.13em', textTransform: 'uppercase', color: '#5A5D78', width: '4.6rem', flexShrink: 0 }}>Stage</span>
-          {[{ label: 'Any', val: 'all' }, { label: 'Permitting', val: 'Permitting/Planning' }, { label: 'Announced', val: 'Announced' }, { label: 'Under Construction', val: 'Under Construction' }, { label: 'Approved', val: 'Approved' }].map(({ label, val }) => (
+          {[{ label: 'Any', val: 'all', count: '4,081' }, { label: 'Permitting', val: 'Permitting/Planning', count: '2,145' }, { label: 'Announced', val: 'Announced', count: '1,234' }, { label: 'Under Construction', val: 'Under Construction', count: '542' }, { label: 'Approved', val: 'Approved', count: '160' }].map(({ label, val, count }) => (
             <button
               key={val}
               onClick={() => setFilters({ ...filters, stage: val })}
@@ -168,7 +168,7 @@ export default function ProjectsList() {
               onMouseEnter={(e) => { if (filters.stage !== val) e.currentTarget.style.borderColor = '#376BE9' }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent' }}
             >
-              {label}
+              {label} <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.66rem', color: filters.stage === val ? 'rgba(255,255,255,.75)' : '#5A5D78' }}>{count}</span>
             </button>
           ))}
         </div>
@@ -183,17 +183,19 @@ export default function ProjectsList() {
               fontFamily: 'inherit', fontSize: '0.8rem', cursor: 'pointer',
               background: filters.state !== 'all' ? '#376BE9' : '#E9EBF5',
               color: filters.state !== 'all' ? '#FFFFFF' : '#1C0140',
-              border: '1px solid transparent', borderRadius: '999px', padding: '0.24rem 0.7rem',
+              border: '1px solid #D6D9E8', borderRadius: '3px', padding: '0.35rem 0.7rem',
             }}
             onMouseEnter={(e) => { if (filters.state === 'all') e.currentTarget.style.borderColor = '#376BE9' }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent' }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#D6D9E8' }}
           >
             <option value="all">Any state — 4,081</option>
             <option value="TX">Texas — 1,524</option>
-            <option value="CA">California — 256</option>
-            <option value="IL">Illinois — 230</option>
+            <option value="CA">California — 826</option>
+            <option value="IL">Illinois — 342</option>
+            <option value="NY">New York — 287</option>
+            <option value="OH">Ohio — 256</option>
           </select>
-          <span style={{ fontSize: '0.74rem', color: '#5A5D78' }}>50 states won't fit as chips</span>
+          <span style={{ fontSize: '0.74rem', color: '#5A5D78' }}>50 states available</span>
         </div>
 
         {/* Flags Filter */}
