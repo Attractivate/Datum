@@ -17,9 +17,6 @@ const navLinkStyle = `
 `
 
 export default function Header() {
-  const today = new Date();
-  const dateStr = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-
   return (
     <>
       <style>{navLinkStyle}</style>
@@ -36,9 +33,6 @@ export default function Header() {
             <Link href="/contacts" className="nav-link">Contacts</Link>
             <Link href="/search" className="nav-link">Search</Link>
           </nav>
-          <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,.62)', whiteSpace: 'nowrap', fontFamily: '"IBM Plex Mono", ui-monospace, monospace', letterSpacing: '0.05em' }}>
-            {dateStr} · 8 pipelines
-          </div>
         </div>
       </header>
     </>
