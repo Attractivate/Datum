@@ -110,21 +110,21 @@ export default function ProjectsList() {
         {/* Industry Filter */}
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem' }}>
           <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', letterSpacing: '0.13em', textTransform: 'uppercase', color: '#5A5D78', width: '4.6rem', flexShrink: 0 }}>Industry</span>
-          {['all', 'Power Generation', 'Oil & Gas', 'Hi Tech', 'Power Delivery', 'Water Infrastructure', 'Life Sciences'].map((ind, idx) => (
+          {[{ label: 'All', val: 'all' }, { label: 'Power Generation', val: 'Power Generation' }, { label: 'Power Delivery', val: 'Power Delivery' }, { label: 'Oil & Gas', val: 'Oil & Gas' }, { label: 'Hi Tech', val: 'Hi Tech' }, { label: 'Life Sciences', val: 'Life Sciences' }].map(({ label, val }) => (
             <button
-              key={ind}
-              onClick={() => setFilters({ ...filters, ind })}
+              key={val}
+              onClick={() => setFilters({ ...filters, ind: val })}
               style={{
                 fontFamily: 'inherit', fontSize: '0.8rem', cursor: 'pointer',
-                background: filters.ind === ind ? '#376BE9' : '#E9EBF5',
-                color: filters.ind === ind ? '#FFFFFF' : '#1C0140',
+                background: filters.ind === val ? '#376BE9' : '#E9EBF5',
+                color: filters.ind === val ? '#FFFFFF' : '#1C0140',
                 border: '1px solid transparent', borderRadius: '999px', padding: '0.24rem 0.7rem',
                 display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
               }}
-              onMouseEnter={(e) => { if (filters.ind !== ind) e.currentTarget.style.borderColor = '#376BE9' }}
+              onMouseEnter={(e) => { if (filters.ind !== val) e.currentTarget.style.borderColor = '#376BE9' }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent' }}
             >
-              {ind === 'all' ? 'All' : ind.split(' ')[0]} {ind !== 'all' && idx === 5 && <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.66rem', color: filters.ind === ind ? 'rgba(255,255,255,.75)' : '#5A5D78' }}>28</span>}
+              {label}
             </button>
           ))}
         </div>
