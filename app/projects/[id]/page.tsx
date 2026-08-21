@@ -122,7 +122,30 @@ export default function ProjectDetail() {
       {/* Two Column Layout */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
         {/* Left: Updates & Milestones with Toggle */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+          {/* Toggle Buttons */}
+          <div style={{ display: 'flex', gap: '0.8rem', justifyContent: 'flex-start' }}>
+            {['updates', 'milestones'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                style={{
+                  fontFamily: 'Source Sans 3,sans-serif',
+                  fontWeight: 600,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  background: activeTab === tab ? '#376BE9' : '#E9EBF5',
+                  color: activeTab === tab ? '#FFFFFF' : '#1C0140',
+                  border: '1px solid transparent',
+                  borderRadius: '3px',
+                  padding: '0.4rem 0.8rem',
+                }}
+              >
+                {tab === 'updates' ? 'View Updates' : 'View Milestones'}
+              </button>
+            ))}
+          </div>
+
           {/* Updates Section */}
           {activeTab === 'updates' && (
             <section style={{ background: '#FFFFFF', border: '1px solid #D6D9E8', borderRadius: '4px', padding: '1.2rem', boxShadow: '0 1px 2px rgba(28,1,64,.06)' }}>
@@ -184,29 +207,6 @@ export default function ProjectDetail() {
               </div>
             </section>
           )}
-
-          {/* Toggle Buttons */}
-          <div style={{ display: 'flex', gap: '0.8rem', justifyContent: 'flex-start' }}>
-            {['updates', 'milestones'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                style={{
-                  fontFamily: 'Source Sans 3,sans-serif',
-                  fontWeight: 600,
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  background: activeTab === tab ? '#376BE9' : '#E9EBF5',
-                  color: activeTab === tab ? '#FFFFFF' : '#1C0140',
-                  border: '1px solid transparent',
-                  borderRadius: '3px',
-                  padding: '0.4rem 0.8rem',
-                }}
-              >
-                {tab === 'updates' ? 'View Updates' : 'View Milestones'}
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* Right Sidebar */}
