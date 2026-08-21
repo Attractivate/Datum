@@ -120,82 +120,94 @@ export default function ProjectDetail() {
       </div>
 
       {/* Two Column Layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 18rem', gap: '2rem', alignItems: 'start' }}>
-        {/* Left: Updates & Milestones */}
-        <section>
-          <div style={{ display: 'flex', gap: '1rem', borderBottom: '2px solid #D6D9E8', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+        {/* Left: Updates & Milestones with Toggle */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          {/* Updates Section */}
+          {activeTab === 'updates' && (
+            <section style={{ background: '#FFFFFF', border: '1px solid #D6D9E8', borderRadius: '4px', padding: '1.2rem', boxShadow: '0 1px 2px rgba(28,1,64,.06)' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '1.2rem', paddingBottom: '0.8rem', borderBottom: '1px solid #E9EBF5' }}>
+                <h2 style={{ fontFamily: 'Chivo,sans-serif', fontWeight: 700, fontSize: '1.2rem', color: '#1C0140', margin: 0 }}>Updates</h2>
+                <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.75rem', color: '#5A5D78' }}>{mockUpdates.length} events</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                {mockUpdates.map((update) => {
+                  const dateObj = new Date(update.date)
+                  const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                  return (
+                    <div key={update.id} style={{ paddingBottom: '1.2rem', borderBottom: '1px solid #E9EBF5' }}>
+                      <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.75rem', color: '#5A5D78', marginBottom: '0.3rem' }}>
+                        {dateStr}
+                      </div>
+                      <div style={{ display: 'inline-block', fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', letterSpacing: '0.1em', textTransform: 'uppercase', background: '#E4EBFC', color: '#376BE9', padding: '0.25rem 0.6rem', borderRadius: '2px', marginBottom: '0.4rem' }}>
+                        News Mention
+                      </div>
+                      <Link href={`/updates/${update.id}`} style={{ fontFamily: 'Source Sans 3,sans-serif', fontWeight: 600, fontSize: '0.95rem', color: '#376BE9', display: 'block', marginBottom: '0.3rem', textDecoration: 'none', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'} onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}>
+                        {update.title}
+                      </Link>
+                      <div style={{ fontSize: '0.8rem', color: '#5A5D78' }}>
+                        <Link href="#" style={{ color: '#376BE9', textDecoration: 'none', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'} onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}>
+                          {update.source}
+                        </Link>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </section>
+          )}
+
+          {/* Milestones Section */}
+          {activeTab === 'milestones' && (
+            <section style={{ background: '#FFFFFF', border: '1px solid #D6D9E8', borderRadius: '4px', padding: '1.2rem', boxShadow: '0 1px 2px rgba(28,1,64,.06)' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '1.2rem', paddingBottom: '0.8rem', borderBottom: '1px solid #E9EBF5' }}>
+                <h2 style={{ fontFamily: 'Chivo,sans-serif', fontWeight: 700, fontSize: '1.2rem', color: '#1C0140', margin: 0 }}>Project Milestones</h2>
+                <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.75rem', color: '#5A5D78' }}>{mockMilestones.length} phases</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                {mockMilestones.map((milestone) => (
+                  <div key={milestone.id} style={{ paddingBottom: '1.2rem', borderBottom: '1px solid #E9EBF5' }}>
+                    <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.75rem', color: '#5A5D78', marginBottom: '0.3rem' }}>
+                      {milestone.timeframe}
+                    </div>
+                    <div style={{ display: 'inline-block', fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', letterSpacing: '0.1em', textTransform: 'uppercase', background: '#376BE9', color: '#FFFFFF', padding: '0.25rem 0.6rem', borderRadius: '2px', marginBottom: '0.4rem' }}>
+                      Milestone
+                    </div>
+                    <div style={{ fontFamily: 'Source Sans 3,sans-serif', fontWeight: 600, fontSize: '0.95rem', color: '#1C0140', marginBottom: '0.3rem' }}>
+                      {milestone.phase}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: '#5A5D78' }}>
+                      {milestone.description}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Toggle Buttons */}
+          <div style={{ display: 'flex', gap: '0.8rem', justifyContent: 'flex-start' }}>
             {['updates', 'milestones'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 style={{
-                  fontFamily: 'Chivo,sans-serif',
-                  fontWeight: 700,
-                  fontSize: '1rem',
+                  fontFamily: 'Source Sans 3,sans-serif',
+                  fontWeight: 600,
+                  fontSize: '0.85rem',
                   cursor: 'pointer',
-                  background: 'none',
-                  border: 'none',
-                  borderBottom: activeTab === tab ? '3px solid #376BE9' : 'none',
-                  padding: '0.7rem 0',
-                  color: activeTab === tab ? '#376BE9' : '#5A5D78',
-                  marginBottom: '-2px',
+                  background: activeTab === tab ? '#376BE9' : '#E9EBF5',
+                  color: activeTab === tab ? '#FFFFFF' : '#1C0140',
+                  border: '1px solid transparent',
+                  borderRadius: '3px',
+                  padding: '0.4rem 0.8rem',
                 }}
               >
-                {tab === 'updates' ? 'Updates' : 'Milestones'}
+                {tab === 'updates' ? 'View Updates' : 'View Milestones'}
               </button>
             ))}
           </div>
-
-          {/* Updates Timeline */}
-          {activeTab === 'updates' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-              {mockUpdates.map((update, idx) => (
-                <div key={update.id} style={{ display: 'flex', gap: '1.2rem', position: 'relative' }}>
-                  {idx < mockUpdates.length - 1 && (
-                    <div style={{ position: 'absolute', left: '0.35rem', top: '2.2rem', width: '1px', height: 'calc(100% + 1rem)', background: '#D6D9E8' }} />
-                  )}
-                  <div style={{ flexShrink: 0, width: '0.7rem', height: '0.7rem', borderRadius: '50%', background: '#376BE9', marginTop: '0.5rem', position: 'relative', zIndex: 1 }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.65rem', color: '#5A5D78', marginBottom: '0.2rem' }}>
-                      {update.date} · {update.source}
-                    </div>
-                    <Link href={`/updates/${update.id}`} style={{ fontFamily: 'Source Sans 3,sans-serif', fontWeight: 600, fontSize: '0.95rem', color: '#376BE9', marginBottom: '0.3rem', textDecoration: 'none', display: 'block', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'} onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}>
-                      {update.title}
-                    </Link>
-                    <div style={{ fontSize: '0.85rem', color: '#5A5D78', lineHeight: 1.4 }}>
-                      {update.mention}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Milestones Timeline */}
-          {activeTab === 'milestones' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-              {mockMilestones.map((milestone, idx) => (
-                <div key={milestone.id} style={{ display: 'flex', gap: '1.2rem', position: 'relative' }}>
-                  {idx < mockMilestones.length - 1 && (
-                    <div style={{ position: 'absolute', left: '0.35rem', top: '2.2rem', width: '1px', height: 'calc(100% + 1rem)', background: '#D6D9E8' }} />
-                  )}
-                  <div style={{ flexShrink: 0, width: '0.7rem', height: '0.7rem', borderRadius: '50%', background: '#8A6A12', marginTop: '0.5rem', position: 'relative', zIndex: 1 }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.65rem', color: '#5A5D78', marginBottom: '0.2rem' }}>
-                      {milestone.timeframe}
-                    </div>
-                    <div style={{ fontFamily: 'Source Sans 3,sans-serif', fontWeight: 600, fontSize: '0.95rem', color: '#1C0140', marginBottom: '0.3rem' }}>
-                      {milestone.phase}
-                    </div>
-                    <div style={{ fontSize: '0.85rem', color: '#5A5D78', lineHeight: 1.4 }}>
-                      {milestone.description}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+        </div>
 
         {/* Right Sidebar */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
