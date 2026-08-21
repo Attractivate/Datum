@@ -26,6 +26,14 @@ const mockProjects: Project[] = [
   { id: '3', name: 'Glass Mountain Wind 1', type: 'Power Plant · New Build', owner: 'Not published', location: 'Reeves County, Texas', state: 'TX', stage: 'Permitting/Planning', capacity: '511.5 MW', capacityValue: 511.5, milestone: '—', industryRaw: 'Power Generation', industryDisplay: 'Power Generation', pastDue: false, needsReview: false },
   { id: '4', name: 'Athens Solar I (Hybrid)', type: 'Power Plant · New Build', owner: 'Vesper Energy Development LLC', location: 'Placer County, CA', state: 'CA', stage: 'Announced', capacity: '500.0 MW (2 units)', capacityValue: 500, milestone: 'Jun 2028', industryRaw: 'Power Generation', industryDisplay: 'Power Generation', pastDue: false, needsReview: false },
   { id: '5', name: 'Daggett Solar 3', type: 'Power Plant · New Build', owner: 'Not published', location: 'San Bernardino County, CA', state: 'CA', stage: 'Permitting/Planning', capacity: '300.0 MW', capacityValue: 300, milestone: 'Aug 2023', industryRaw: 'Power Generation', industryDisplay: 'Power Generation', pastDue: true, needsReview: false },
+  { id: '6', name: '245 MW Solar — Ameren Transmission Company Of Illinois, Scott County, IL (MISO J4031)', type: 'Power Plant · New Build', owner: 'Not published', location: 'Scott County, IL', state: 'IL', stage: 'Permitting/Planning', capacity: '245.0 MW', capacityValue: 245, milestone: '—', industryRaw: 'Power Generation', industryDisplay: 'Power Generation', pastDue: false, needsReview: false },
+  { id: '7', name: 'Desert Jewel Storage', type: 'Power Plant · New Build', owner: 'Not published', location: 'San Diego County, CA', state: 'CA', stage: 'Permitting/Planning', capacity: '200.0 MW', capacityValue: 200, milestone: 'Aug 2029', industryRaw: 'Power Generation', industryDisplay: 'Power Generation', pastDue: false, needsReview: false },
+  { id: '8', name: 'Myers Solar and Storage', type: 'Power Plant · New Build', owner: 'Belltown Power Texas 2, LLC', location: 'Goliad County, TX', state: 'TX', stage: 'Permitting/Planning', capacity: '176.6 MW (2 units)', capacityValue: 176.6, milestone: 'Aug 2028', industryRaw: 'Power Generation', industryDisplay: 'Power Generation', pastDue: false, needsReview: false },
+  { id: '9', name: 'Montezuma II', type: 'Power Plant · New Build', owner: 'Not published', location: 'Solano County, CA', state: 'CA', stage: 'Permitting/Planning', capacity: '78.0 MW', capacityValue: 78, milestone: 'Jan 2012', industryRaw: 'Power Generation', industryDisplay: 'Power Generation', pastDue: true, needsReview: false },
+  { id: '10', name: 'Frostburg 138 kV', type: 'Power Plant · New Build', owner: 'Not published', location: 'Allegany County, MD', state: 'MD', stage: 'Permitting/Planning', capacity: '80.0 MW', capacityValue: 80, milestone: 'Dec 2021', industryRaw: 'Power Generation', industryDisplay: 'Power Generation', pastDue: true, needsReview: false },
+  { id: '11', name: 'SeaOne Corpus Christi, LLC', type: 'LNG Export Terminal', owner: 'SeaOne Corpus Christi, LLC', location: 'United States', state: '', stage: 'Approved', capacity: '1.50 Bcf/d', capacityValue: 0, milestone: '—', industryRaw: 'Oil & Gas', industryDisplay: 'Oil & Gas', pastDue: false, needsReview: false },
+  { id: '12', name: 'Terafab chip plant', type: 'Chip Manufacturing', owner: 'Tesla and SpaceX', location: 'Texas', state: 'TX', stage: 'Announced', capacity: '$16.8 bn', capacityValue: 0, milestone: '—', industryRaw: 'Hi Tech', industryDisplay: 'Hi Tech', pastDue: false, needsReview: false },
+  { id: '13', name: 'Amazon Gilroy Data Center', type: 'Data Center', owner: 'Amazon', location: 'Gilroy, California', state: 'CA', stage: 'Under Construction', capacity: '—', capacityValue: 0, milestone: '—', industryRaw: 'Hi Tech', industryDisplay: 'Hi Tech', pastDue: false, needsReview: false },
 ]
 
 export default function ProjectsList() {
@@ -124,7 +132,7 @@ export default function ProjectsList() {
         {/* Capacity Filter */}
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem' }}>
           <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', letterSpacing: '0.13em', textTransform: 'uppercase', color: '#5A5D78', width: '4.6rem', flexShrink: 0 }}>Capacity</span>
-          {[{ label: 'Any', val: 'all' }, { label: 'Under 100 MW', val: '0-100' }, { label: '100–250 MW', val: '100-250' }].map(({ label, val }) => (
+          {[{ label: 'Any', val: 'all' }, { label: 'Under 100 MW', val: '0-100' }, { label: '100–250 MW', val: '100-250' }, { label: '250–500 MW', val: '250-500' }, { label: '500 MW–1 GW', val: '500-1000' }, { label: '1 GW+', val: '1000-' }].map(({ label, val }) => (
             <button
               key={val}
               onClick={() => setFilters({ ...filters, mw: val })}
@@ -141,6 +149,84 @@ export default function ProjectsList() {
               {label}
             </button>
           ))}
+        </div>
+
+        {/* Stage Filter */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem' }}>
+          <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', letterSpacing: '0.13em', textTransform: 'uppercase', color: '#5A5D78', width: '4.6rem', flexShrink: 0 }}>Stage</span>
+          {[{ label: 'Any', val: 'all' }, { label: 'Permitting', val: 'Permitting/Planning' }, { label: 'Announced', val: 'Announced' }, { label: 'Under Construction', val: 'Under Construction' }, { label: 'Approved', val: 'Approved' }].map(({ label, val }) => (
+            <button
+              key={val}
+              onClick={() => setFilters({ ...filters, stage: val })}
+              style={{
+                fontFamily: 'inherit', fontSize: '0.8rem', cursor: 'pointer',
+                background: filters.stage === val ? '#376BE9' : '#E9EBF5',
+                color: filters.stage === val ? '#FFFFFF' : '#1C0140',
+                border: '1px solid transparent', borderRadius: '999px', padding: '0.24rem 0.7rem',
+                display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+              }}
+              onMouseEnter={(e) => { if (filters.stage !== val) e.currentTarget.style.borderColor = '#376BE9' }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent' }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* State Filter */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem' }}>
+          <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', letterSpacing: '0.13em', textTransform: 'uppercase', color: '#5A5D78', width: '4.6rem', flexShrink: 0 }}>State</span>
+          <select
+            value={filters.state}
+            onChange={(e) => setFilters({ ...filters, state: e.target.value })}
+            style={{
+              fontFamily: 'inherit', fontSize: '0.8rem', cursor: 'pointer',
+              background: filters.state !== 'all' ? '#376BE9' : '#E9EBF5',
+              color: filters.state !== 'all' ? '#FFFFFF' : '#1C0140',
+              border: '1px solid transparent', borderRadius: '999px', padding: '0.24rem 0.7rem',
+            }}
+            onMouseEnter={(e) => { if (filters.state === 'all') e.currentTarget.style.borderColor = '#376BE9' }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent' }}
+          >
+            <option value="all">Any state — 4,081</option>
+            <option value="TX">Texas — 1,524</option>
+            <option value="CA">California — 256</option>
+            <option value="IL">Illinois — 230</option>
+          </select>
+          <span style={{ fontSize: '0.74rem', color: '#5A5D78' }}>50 states won't fit as chips</span>
+        </div>
+
+        {/* Flags Filter */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem' }}>
+          <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', letterSpacing: '0.13em', textTransform: 'uppercase', color: '#5A5D78', width: '4.6rem', flexShrink: 0 }}>Flags</span>
+          <button
+            onClick={() => setFilters({ ...filters, past: !filters.past })}
+            style={{
+              fontFamily: 'inherit', fontSize: '0.8rem', cursor: 'pointer',
+              background: filters.past ? '#8A6A12' : '#E9EBF5',
+              color: filters.past ? '#FAF2DC' : '#1C0140',
+              border: '1px solid transparent', borderRadius: '999px', padding: '0.24rem 0.7rem',
+              display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+            }}
+            onMouseEnter={(e) => { if (!filters.past) e.currentTarget.style.borderColor = '#376BE9' }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent' }}
+          >
+            Past due only <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.66rem', color: filters.past ? 'rgba(250,242,220,.75)' : '#5A5D78' }}>134</span>
+          </button>
+          <button
+            onClick={() => setFilters({ ...filters, review: !filters.review })}
+            style={{
+              fontFamily: 'inherit', fontSize: '0.8rem', cursor: 'pointer',
+              background: filters.review ? '#376BE9' : '#E9EBF5',
+              color: filters.review ? '#FFFFFF' : '#1C0140',
+              border: '1px solid transparent', borderRadius: '999px', padding: '0.24rem 0.7rem',
+              display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+            }}
+            onMouseEnter={(e) => { if (!filters.review) e.currentTarget.style.borderColor = '#376BE9' }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent' }}
+          >
+            Needs review <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.66rem', color: filters.review ? 'rgba(255,255,255,.75)' : '#5A5D78' }}>169</span>
+          </button>
         </div>
       </div>
 
