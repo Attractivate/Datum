@@ -37,6 +37,7 @@ const mockProject = {
   state: 'TX',
   stage: 'Announced',
   capacity: '11,679.3 MW (157 units)',
+  milestone: 'Dec 2027',
   firstSeen: '2023-03-14',
   status: 'Announced',
   updateCount: 6,
@@ -118,42 +119,9 @@ export default function ProjectDetail() {
         ))}
       </div>
 
-      {/* Content Sections */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
-        {/* Companies Section */}
-        <section>
-          <h2 style={{ fontFamily: 'Chivo,sans-serif', fontWeight: 700, fontSize: '1.3rem', letterSpacing: '-.02em', color: '#1C0140', margin: '0 0 1rem 0', borderBottom: '2px solid #D6D9E8', paddingBottom: '0.7rem' }}>
-            Companies ({mockCompanies.length})
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(16rem, 1fr))', gap: '1rem' }}>
-            {mockCompanies.map((company) => (
-              <div key={company.id} style={{ background: '#FFFFFF', border: '1px solid #D6D9E8', borderRadius: '4px', padding: '1rem', boxShadow: '0 1px 2px rgba(28,1,64,.06)' }}>
-                <div style={{ fontFamily: 'Source Sans 3,sans-serif', fontWeight: 600, fontSize: '0.95rem', color: '#1C0140', marginBottom: '0.3rem' }}>
-                  {company.name}
-                </div>
-                <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.65rem', letterSpacing: '0.05em', textTransform: 'uppercase', color: '#5A5D78', marginBottom: '0.6rem' }}>
-                  {company.role}
-                </div>
-                {company.capacity && (
-                  <div style={{ fontSize: '0.8rem', color: '#376BE9', fontWeight: 600, marginBottom: '0.5rem' }}>
-                    {company.capacity}
-                  </div>
-                )}
-                <div style={{ fontSize: '0.75rem', color: '#5A5D78', marginBottom: '0.4rem' }}>
-                  <div>First: <span style={{ fontFamily: '"IBM Plex Mono",monospace', color: '#1C0140' }}>{company.firstAgreement}</span></div>
-                  <div>Latest: <span style={{ fontFamily: '"IBM Plex Mono",monospace', color: '#1C0140' }}>{company.latestAgreement}</span></div>
-                </div>
-                {company.notes && (
-                  <div style={{ fontSize: '0.75rem', color: '#5A5D78', fontStyle: 'italic', marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid #E9EBF5' }}>
-                    {company.notes}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Updates & Milestones Tabs */}
+      {/* Two Column Layout */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 18rem', gap: '2rem', alignItems: 'start' }}>
+        {/* Left: Updates & Milestones */}
         <section>
           <div style={{ display: 'flex', gap: '1rem', borderBottom: '2px solid #D6D9E8', marginBottom: '1.5rem' }}>
             {['updates', 'milestones'].map((tab) => (
@@ -228,6 +196,62 @@ export default function ProjectDetail() {
             </div>
           )}
         </section>
+
+        {/* Right Sidebar */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {/* Project Details */}
+          <section style={{ background: '#FFFFFF', border: '1px solid #D6D9E8', borderRadius: '4px', padding: '1rem', boxShadow: '0 1px 2px rgba(28,1,64,.06)' }}>
+            <h3 style={{ fontFamily: 'Chivo,sans-serif', fontWeight: 700, fontSize: '0.95rem', color: '#1C0140', margin: '0 0 0.8rem 0', paddingBottom: '0.6rem', borderBottom: '1px solid #E9EBF5' }}>
+              Project Details
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
+              <div>
+                <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', letterSpacing: '0.05em', textTransform: 'uppercase', color: '#5A5D78', marginBottom: '0.2rem' }}>Owner</div>
+                <div style={{ fontSize: '0.85rem', color: '#1C0140', fontWeight: 600 }}>{mockProject.owner}</div>
+              </div>
+              <div>
+                <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', letterSpacing: '0.05em', textTransform: 'uppercase', color: '#5A5D78', marginBottom: '0.2rem' }}>Capacity</div>
+                <div style={{ fontSize: '0.85rem', color: '#1C0140', fontWeight: 600 }}>{mockProject.capacity}</div>
+              </div>
+              <div>
+                <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', letterSpacing: '0.05em', textTransform: 'uppercase', color: '#5A5D78', marginBottom: '0.2rem' }}>Stage</div>
+                <div style={{ fontSize: '0.85rem', color: '#1C0140', fontWeight: 600 }}>{mockProject.stage}</div>
+              </div>
+              <div>
+                <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', letterSpacing: '0.05em', textTransform: 'uppercase', color: '#5A5D78', marginBottom: '0.2rem' }}>Milestone</div>
+                <div style={{ fontSize: '0.85rem', color: '#1C0140', fontWeight: 600 }}>{mockProject.milestone}</div>
+              </div>
+            </div>
+          </section>
+
+          {/* Companies Sidebar */}
+          <section style={{ background: '#FFFFFF', border: '1px solid #D6D9E8', borderRadius: '4px', padding: '1rem', boxShadow: '0 1px 2px rgba(28,1,64,.06)' }}>
+            <h3 style={{ fontFamily: 'Chivo,sans-serif', fontWeight: 700, fontSize: '0.95rem', color: '#1C0140', margin: '0 0 0.8rem 0', paddingBottom: '0.6rem', borderBottom: '1px solid #E9EBF5' }}>
+              Companies ({mockCompanies.length})
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', maxHeight: '24rem', overflowY: 'auto' }}>
+              {mockCompanies.map((company) => (
+                <div key={company.id} style={{ paddingBottom: '0.8rem', borderBottom: '1px solid #E9EBF5' }}>
+                  <div style={{ fontFamily: 'Source Sans 3,sans-serif', fontWeight: 600, fontSize: '0.8rem', color: '#1C0140', marginBottom: '0.2rem' }}>
+                    {company.name}
+                  </div>
+                  <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', letterSpacing: '0.05em', textTransform: 'uppercase', color: '#5A5D78', marginBottom: '0.3rem' }}>
+                    {company.role}
+                  </div>
+                  {company.capacity && (
+                    <div style={{ fontSize: '0.75rem', color: '#376BE9', fontWeight: 600, marginBottom: '0.2rem' }}>
+                      {company.capacity}
+                    </div>
+                  )}
+                  <div style={{ fontSize: '0.7rem', color: '#5A5D78' }}>
+                    <div>1st: <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.68rem' }}>{company.firstAgreement}</span></div>
+                    <div>Latest: <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.68rem' }}>{company.latestAgreement}</span></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
       </div>
     </main>
   )
