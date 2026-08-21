@@ -159,9 +159,9 @@ export default function ProjectDetail() {
                     <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.65rem', color: '#5A5D78', marginBottom: '0.2rem' }}>
                       {update.date} · {update.source}
                     </div>
-                    <div style={{ fontFamily: 'Source Sans 3,sans-serif', fontWeight: 600, fontSize: '0.95rem', color: '#1C0140', marginBottom: '0.3rem' }}>
+                    <Link href={`/updates/${update.id}`} style={{ fontFamily: 'Source Sans 3,sans-serif', fontWeight: 600, fontSize: '0.95rem', color: '#376BE9', marginBottom: '0.3rem', textDecoration: 'none', display: 'block', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'} onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}>
                       {update.title}
-                    </div>
+                    </Link>
                     <div style={{ fontSize: '0.85rem', color: '#5A5D78', lineHeight: 1.4 }}>
                       {update.mention}
                     </div>
@@ -232,9 +232,9 @@ export default function ProjectDetail() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', maxHeight: '24rem', overflowY: 'auto' }}>
               {mockCompanies.map((company) => (
                 <div key={company.id} style={{ paddingBottom: '0.8rem', borderBottom: '1px solid #E9EBF5' }}>
-                  <div style={{ fontFamily: 'Source Sans 3,sans-serif', fontWeight: 600, fontSize: '0.8rem', color: '#1C0140', marginBottom: '0.2rem' }}>
+                  <Link href={`/companies/${company.id}`} style={{ fontFamily: 'Source Sans 3,sans-serif', fontWeight: 600, fontSize: '0.8rem', color: '#376BE9', marginBottom: '0.2rem', textDecoration: 'none', display: 'block', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'} onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}>
                     {company.name}
-                  </div>
+                  </Link>
                   <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', letterSpacing: '0.05em', textTransform: 'uppercase', color: '#5A5D78', marginBottom: '0.3rem' }}>
                     {company.role}
                   </div>
