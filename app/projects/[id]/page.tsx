@@ -1,0 +1,234 @@
+'use client'
+
+import { useState } from 'react'
+import Link from 'next/link'
+
+interface Company {
+  id: string
+  name: string
+  role: string
+  capacity?: string
+  firstAgreement?: string
+  latestAgreement?: string
+  notes?: string
+}
+
+interface Update {
+  id: string
+  date: string
+  source: string
+  title: string
+  mention: string
+}
+
+interface Milestone {
+  id: string
+  phase: string
+  timeframe: string
+  description: string
+}
+
+const mockProject = {
+  id: '1',
+  name: 'Project Matador Gas Plant (PMG)',
+  type: 'Power Plant · New Build',
+  owner: 'Fermi America',
+  location: 'Carson County, TX',
+  state: 'TX',
+  stage: 'Announced',
+  capacity: '11,679.3 MW (157 units)',
+  firstSeen: '2023-03-14',
+  status: 'Announced',
+  updateCount: 6,
+  description: 'Large-scale natural gas power generation facility in Texas',
+}
+
+const mockCompanies: Company[] = [
+  { id: '1', name: 'Fermi America', role: 'Developer', capacity: '11,679.3 MW', firstAgreement: '2023-03-14', latestAgreement: '2026-02-21', notes: 'Primary developer and operator' },
+  { id: '2', name: 'Sterling Construction', role: 'Engineering & Procurement', capacity: '—', firstAgreement: '2024-01-10', latestAgreement: '2025-12-15', notes: 'EPC contract for Phase 1' },
+  { id: '3', name: 'Grid Modernization LLC', role: 'Interconnection', capacity: '—', firstAgreement: '2023-08-22', latestAgreement: '2025-08-22', notes: 'Grid connection and studies' },
+  { id: '4', name: 'TXU Energy Solutions', role: 'Offtake Partner', capacity: '7,000 MW', firstAgreement: '2024-06-01', latestAgreement: '2026-06-01', notes: 'Long-term power purchase agreement' },
+  { id: '5', name: 'Capital Partners Group', role: 'Financing', capacity: '—', firstAgreement: '2024-09-15', latestAgreement: '2026-03-30', notes: 'Project finance commitment' },
+]
+
+const mockUpdates: Update[] = [
+  { id: '1', date: '2026-02-21', source: 'KXAN', title: 'Fermi America Announces PMG Financing Close', mention: 'Financial close on $8.2B project financing package' },
+  { id: '2', date: '2026-01-15', source: 'Energy Dive', title: 'Sterling Construction Awarded PMG EPC Contract', mention: '$4.1B engineering, procurement, and construction contract' },
+  { id: '3', date: '2025-11-08', source: 'Power Grid News', title: 'ERCOT Approves PMG Interconnection Application', mention: 'Grid connection study completed; approval granted' },
+  { id: '4', date: '2025-08-22', source: 'Bizjournal', title: 'TXU Energy Signs 15-Year PPA for PMG', mention: '7 GW of capacity under long-term power purchase agreement' },
+  { id: '5', date: '2025-06-14', source: 'Reuters', title: 'Fermi America Secures Environmental Permits for PMG', mention: 'Texas Commission on Environmental Quality issues final permits' },
+  { id: '6', date: '2024-03-01', source: 'pv-magazine', title: 'PMG Reaches Financial Close', mention: 'Project reaches final investment decision milestone' },
+]
+
+const mockMilestones: Milestone[] = [
+  { id: '1', phase: 'Phase 1: Permitting & Design', timeframe: 'Q1 2027 – Q3 2027', description: 'Final engineering design, equipment orders, supply chain finalization' },
+  { id: '2', phase: 'Phase 2: Construction Mobilization', timeframe: 'Q4 2027 – Q2 2028', description: 'Site preparation, foundation work, equipment delivery begins' },
+  { id: '3', phase: 'Phase 3: Major Construction', timeframe: 'Q3 2028 – Q4 2029', description: 'Generator installation, power block assembly, grid infrastructure' },
+  { id: '4', phase: 'Phase 4: Testing & Commissioning', timeframe: 'Q1 2030 – Q2 2030', description: 'Performance testing, grid synchronization, operational readiness' },
+  { id: '5', phase: 'Phase 5: Commercial Operation', timeframe: 'Q3 2030 onwards', description: 'Full commercial operation and revenue-generating phase' },
+]
+
+export default function ProjectDetail() {
+  const [activeTab, setActiveTab] = useState('updates')
+
+  return (
+    <main style={{ maxWidth: '96rem', margin: '0 auto', padding: '1.4rem clamp(1rem, 3vw, 2rem) 5rem', display: 'flex', flexDirection: 'column', gap: '1.8rem' }}>
+      {/* Breadcrumb */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#5A5D78' }}>
+        <Link href="/projects" style={{ color: '#376BE9', textDecoration: 'none' }}>Projects</Link>
+        <span>/</span>
+        <span>{mockProject.name}</span>
+      </div>
+
+      {/* Header */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.4rem 1.5rem' }}>
+        <div style={{ flex: '1 1 auto', minWidth: '15rem' }}>
+          <h1 style={{ fontFamily: 'Chivo,sans-serif', fontWeight: 900, fontSize: 'clamp(1.6rem, 4vw, 2.1rem)', letterSpacing: '-.03em', lineHeight: 1, margin: 0, marginBottom: '0.35rem' }}>
+            {mockProject.name}
+          </h1>
+          <p style={{ fontFamily: 'Source Sans 3,sans-serif', fontSize: '0.95rem', color: '#5A5D78', margin: 0 }}>
+            {mockProject.type} · {mockProject.location}
+          </p>
+        </div>
+        <div style={{ fontSize: '0.8rem', textAlign: 'right', color: '#5A5D78' }}>
+          <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.7rem', marginBottom: '0.3rem' }}>First seen</div>
+          <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.9rem', color: '#1C0140', fontWeight: 600 }}>2023-03-14</div>
+        </div>
+      </div>
+
+      {/* Stats Tiles */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(12rem, 1fr))', gap: '1rem' }}>
+        {[
+          { label: 'Size', value: '11,679.3 MW', unit: '(157 units)' },
+          { label: 'Status', value: 'Announced', unit: 'No delays' },
+          { label: 'Updates', value: '6', unit: 'mentions' },
+          { label: 'First Seen', value: '2023-03-14', unit: '2 yr 5 mo' },
+        ].map((tile) => (
+          <div key={tile.label} style={{ background: '#FFFFFF', border: '1px solid #D6D9E8', borderRadius: '4px', padding: '0.85rem 1rem 0.95rem', boxShadow: '0 1px 2px rgba(28,1,64,.06)' }}>
+            <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', letterSpacing: '0.13em', textTransform: 'uppercase', color: '#5A5D78', marginBottom: '0.4rem' }}>
+              {tile.label}
+            </div>
+            <div style={{ fontFamily: 'Chivo,sans-serif', fontWeight: 700, fontSize: '1.65rem', lineHeight: 1, color: '#376BE9', marginBottom: '0.15rem' }}>
+              {tile.value}
+            </div>
+            <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.65rem', color: '#5A5D78' }}>
+              {tile.unit}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Content Sections */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
+        {/* Companies Section */}
+        <section>
+          <h2 style={{ fontFamily: 'Chivo,sans-serif', fontWeight: 700, fontSize: '1.3rem', letterSpacing: '-.02em', color: '#1C0140', margin: '0 0 1rem 0', borderBottom: '2px solid #D6D9E8', paddingBottom: '0.7rem' }}>
+            Companies ({mockCompanies.length})
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(16rem, 1fr))', gap: '1rem' }}>
+            {mockCompanies.map((company) => (
+              <div key={company.id} style={{ background: '#FFFFFF', border: '1px solid #D6D9E8', borderRadius: '4px', padding: '1rem', boxShadow: '0 1px 2px rgba(28,1,64,.06)' }}>
+                <div style={{ fontFamily: 'Source Sans 3,sans-serif', fontWeight: 600, fontSize: '0.95rem', color: '#1C0140', marginBottom: '0.3rem' }}>
+                  {company.name}
+                </div>
+                <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.65rem', letterSpacing: '0.05em', textTransform: 'uppercase', color: '#5A5D78', marginBottom: '0.6rem' }}>
+                  {company.role}
+                </div>
+                {company.capacity && (
+                  <div style={{ fontSize: '0.8rem', color: '#376BE9', fontWeight: 600, marginBottom: '0.5rem' }}>
+                    {company.capacity}
+                  </div>
+                )}
+                <div style={{ fontSize: '0.75rem', color: '#5A5D78', marginBottom: '0.4rem' }}>
+                  <div>First: <span style={{ fontFamily: '"IBM Plex Mono",monospace', color: '#1C0140' }}>{company.firstAgreement}</span></div>
+                  <div>Latest: <span style={{ fontFamily: '"IBM Plex Mono",monospace', color: '#1C0140' }}>{company.latestAgreement}</span></div>
+                </div>
+                {company.notes && (
+                  <div style={{ fontSize: '0.75rem', color: '#5A5D78', fontStyle: 'italic', marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid #E9EBF5' }}>
+                    {company.notes}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Updates & Milestones Tabs */}
+        <section>
+          <div style={{ display: 'flex', gap: '1rem', borderBottom: '2px solid #D6D9E8', marginBottom: '1.5rem' }}>
+            {['updates', 'milestones'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                style={{
+                  fontFamily: 'Chivo,sans-serif',
+                  fontWeight: 700,
+                  fontSize: '1rem',
+                  cursor: 'pointer',
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: activeTab === tab ? '3px solid #376BE9' : 'none',
+                  padding: '0.7rem 0',
+                  color: activeTab === tab ? '#376BE9' : '#5A5D78',
+                  marginBottom: '-2px',
+                }}
+              >
+                {tab === 'updates' ? 'Updates' : 'Milestones'}
+              </button>
+            ))}
+          </div>
+
+          {/* Updates Timeline */}
+          {activeTab === 'updates' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+              {mockUpdates.map((update, idx) => (
+                <div key={update.id} style={{ display: 'flex', gap: '1.2rem', position: 'relative' }}>
+                  {idx < mockUpdates.length - 1 && (
+                    <div style={{ position: 'absolute', left: '0.35rem', top: '2.2rem', width: '1px', height: 'calc(100% + 1rem)', background: '#D6D9E8' }} />
+                  )}
+                  <div style={{ flexShrink: 0, width: '0.7rem', height: '0.7rem', borderRadius: '50%', background: '#376BE9', marginTop: '0.5rem', position: 'relative', zIndex: 1 }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.65rem', color: '#5A5D78', marginBottom: '0.2rem' }}>
+                      {update.date} · {update.source}
+                    </div>
+                    <div style={{ fontFamily: 'Source Sans 3,sans-serif', fontWeight: 600, fontSize: '0.95rem', color: '#1C0140', marginBottom: '0.3rem' }}>
+                      {update.title}
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: '#5A5D78', lineHeight: 1.4 }}>
+                      {update.mention}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Milestones Timeline */}
+          {activeTab === 'milestones' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+              {mockMilestones.map((milestone, idx) => (
+                <div key={milestone.id} style={{ display: 'flex', gap: '1.2rem', position: 'relative' }}>
+                  {idx < mockMilestones.length - 1 && (
+                    <div style={{ position: 'absolute', left: '0.35rem', top: '2.2rem', width: '1px', height: 'calc(100% + 1rem)', background: '#D6D9E8' }} />
+                  )}
+                  <div style={{ flexShrink: 0, width: '0.7rem', height: '0.7rem', borderRadius: '50%', background: '#8A6A12', marginTop: '0.5rem', position: 'relative', zIndex: 1 }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.65rem', color: '#5A5D78', marginBottom: '0.2rem' }}>
+                      {milestone.timeframe}
+                    </div>
+                    <div style={{ fontFamily: 'Source Sans 3,sans-serif', fontWeight: 600, fontSize: '0.95rem', color: '#1C0140', marginBottom: '0.3rem' }}>
+                      {milestone.phase}
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: '#5A5D78', lineHeight: 1.4 }}>
+                      {milestone.description}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+    </main>
+  )
+}
