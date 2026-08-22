@@ -15,7 +15,7 @@ const mockContacts: Contact[] = [
     industry: 'Power Gen',
     email: 'jrodriguez@nee.com',
     phone: '+1 (561) 694-4600',
-    linkedin: '#',
+    linkedin: 'https://www.linkedin.com/in/jamesrodriguez/',
   },
   {
     id: '2',
@@ -27,7 +27,7 @@ const mockContacts: Contact[] = [
     industry: 'Power Gen',
     email: 's.chen@brg.com',
     phone: '+1 (647) 847-7654',
-    linkedin: '#',
+    linkedin: 'https://www.linkedin.com/in/sarahchen/',
   },
   {
     id: '3',
@@ -39,7 +39,7 @@ const mockContacts: Contact[] = [
     industry: 'Power Gen',
     email: 'mthompson@southernco.com',
     phone: '+1 (404) 506-5000',
-    linkedin: '#',
+    linkedin: 'https://www.linkedin.com/in/michaelthompson/',
   },
   {
     id: '4',
@@ -51,7 +51,7 @@ const mockContacts: Contact[] = [
     industry: 'Power Gen',
     email: 'ewatson@dom.com',
     phone: '+1 (804) 819-2000',
-    linkedin: '#',
+    linkedin: 'https://www.linkedin.com/in/emilywatson/',
   },
   {
     id: '5',
@@ -63,7 +63,7 @@ const mockContacts: Contact[] = [
     industry: 'Power Gen',
     email: 'rpark@duke-energy.com',
     phone: '+1 (980) 373-2000',
-    linkedin: '#',
+    linkedin: 'https://www.linkedin.com/in/robertpark/',
   },
   {
     id: '6',
@@ -75,7 +75,7 @@ const mockContacts: Contact[] = [
     industry: 'Power Gen',
     email: 'landers@orsted.dk',
     phone: '+45 4476 9476',
-    linkedin: '#',
+    linkedin: 'https://www.linkedin.com/in/lisaandersson/',
   },
   {
     id: '7',
@@ -87,7 +87,7 @@ const mockContacts: Contact[] = [
     industry: 'Power Gen',
     email: 'dkumar@clearwayenergy.com',
     phone: '+1 (415) 625-0999',
-    linkedin: '#',
+    linkedin: 'https://www.linkedin.com/in/davidkumar/',
   },
   {
     id: '8',
@@ -99,7 +99,7 @@ const mockContacts: Contact[] = [
     industry: 'Power Gen',
     email: 'jhayes@nexteraresources.com',
     phone: '+1 (713) 207-3000',
-    linkedin: '#',
+    linkedin: 'https://www.linkedin.com/in/jenniferhayes/',
   },
   {
     id: '9',
@@ -111,7 +111,7 @@ const mockContacts: Contact[] = [
     industry: 'Power Gen',
     email: 'mwilliams@patternenergy.com',
     phone: '+1 (415) 551-8888',
-    linkedin: '#',
+    linkedin: 'https://www.linkedin.com/in/marcuswilliams/',
   },
   {
     id: '10',
@@ -123,7 +123,7 @@ const mockContacts: Contact[] = [
     industry: 'OEM / Supplier',
     email: 'psharma@mhi-global.com',
     phone: '+1 (713) 877-5432',
-    linkedin: '#',
+    linkedin: 'https://www.linkedin.com/in/priyasharma/',
   },
 ]
 
@@ -264,7 +264,11 @@ export default function ContactsPage() {
                   <div style={{ fontSize: '0.8rem', color: '#666' }}>{contact.phone}</div>
                 </td>
                 <td style={{ padding: '0.8rem', fontSize: '0.9rem' }}>
-                  <a href={contact.linkedin} style={{ color: '#376BE9', textDecoration: 'none', fontSize: '0.85rem' }}>LinkedIn →</a>
+                  {contact.linkedin ? (
+                    <a href={contact.linkedin} target="_blank" rel="noopener noreferrer" style={{ color: '#376BE9', textDecoration: 'none', fontSize: '0.85rem' }}>LinkedIn →</a>
+                  ) : (
+                    <span style={{ color: '#999' }}>—</span>
+                  )}
                 </td>
               </tr>
             ))}

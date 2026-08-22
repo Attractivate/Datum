@@ -36,12 +36,12 @@ const mockProjects: ProjectRecord[] = [
 ]
 
 const mockSources = [
-  { title: 'Bristol Myers Squibb to build new plant in Houston', source: 'Pharmaceutical Processing World · 14 Aug 2026' },
-  { title: 'BMS adds $2.3 billion to Houston\'s pharma manufacturing boom', source: 'Google News: Pharma Plants · 12 Aug 2026' },
-  { title: 'Bristol Myers Squibb selects Texas site to build $2.3bn biopharma campus', source: 'Google News: Pharma Plants · 11 Aug 2026' },
-  { title: 'Bristol Myers Squibb commits $2.3bn to modular Texas manufacturing facility', source: 'Google News: Pharma Plants · 11 Aug 2026' },
-  { title: 'BMS banks on Texas for $2.3bn multi-modal manufacturing facility', source: 'Google News: Pharma Plants · 11 Aug 2026' },
-  { title: 'BMS announces $2.3bn Houston manufacturing investment', source: 'Google News: Pharma Plants · 11 Aug 2026' },
+  { title: 'Bristol Myers Squibb to build new plant in Houston', source: 'Pharmaceutical Processing World · 14 Aug 2026', url: 'https://www.pharmprocworld.com/article-bristol-myers-houston' },
+  { title: 'BMS adds $2.3 billion to Houston\'s pharma manufacturing boom', source: 'Google News: Pharma Plants · 12 Aug 2026', url: 'https://news.google.com/pharma-plants-houston' },
+  { title: 'Bristol Myers Squibb selects Texas site to build $2.3bn biopharma campus', source: 'Google News: Pharma Plants · 11 Aug 2026', url: 'https://news.google.com/bms-texas-site' },
+  { title: 'Bristol Myers Squibb commits $2.3bn to modular Texas manufacturing facility', source: 'Google News: Pharma Plants · 11 Aug 2026', url: 'https://news.google.com/bms-modular-facility' },
+  { title: 'BMS banks on Texas for $2.3bn multi-modal manufacturing facility', source: 'Google News: Pharma Plants · 11 Aug 2026', url: 'https://news.google.com/bms-multimodal' },
+  { title: 'BMS announces $2.3bn Houston manufacturing investment', source: 'Google News: Pharma Plants · 11 Aug 2026', url: 'https://news.google.com/bms-houston-investment' },
 ]
 
 export default function CompanyDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -288,7 +288,7 @@ export default function CompanyDetail({ params }: { params: Promise<{ id: string
             </div>
             <div style={{ padding: '1.05rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {mockSources.map((src, idx) => (
-                <a key={idx} href="#" style={{ fontSize: '0.84rem', color: '#376BE9', textDecoration: 'none', fontWeight: 600, lineHeight: 1.3 }}>
+                <a key={idx} href={src.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.84rem', color: '#376BE9', textDecoration: 'none', fontWeight: 600, lineHeight: 1.3 }}>
                   {src.title}
                   <span style={{ display: 'block', fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.66rem', color: '#5A5D78', fontWeight: 400 }}>
                     {src.source}
