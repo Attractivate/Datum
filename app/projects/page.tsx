@@ -1,26 +1,14 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
+import type { Project } from '@/lib/types'
 
-interface Project {
-  id: string
-  name: string
-  type: string
-  owner: string
-  location: string
-  state: string
-  stage: string
-  capacity: string
-  capacityValue: number
-  milestone: string
-  industryRaw: string
-  industryDisplay: string
-  pastDue: boolean
-  needsReview: boolean
+interface ProjectRow extends Project {
+  owner?: { name: string }
 }
 
-const mockProjects: Project[] = [
+const initialProjects: ProjectRow[] = [
   { id: '1', name: 'Project Matador Gas Plant (PMG)', type: 'Power Plant · New Build', owner: 'Fermi America', location: 'Carson County, TX', state: 'TX', stage: 'Announced', capacity: '11,679.3 MW (157 units)', capacityValue: 11679.3, milestone: 'Dec 2027', industryRaw: 'Power Generation', industryDisplay: 'Power Generation', pastDue: false, needsReview: false },
   { id: '2', name: 'Intermountain Pumped Storage Project', type: 'Power Plant · New Build', owner: 'Premium Energy Holdings', location: 'Millard County, UT', state: 'UT', stage: 'Announced', capacity: '1,000.0 MW (4 units)', capacityValue: 1000, milestone: 'Jul 2028', industryRaw: 'Power Generation', industryDisplay: 'Power Generation', pastDue: false, needsReview: false },
   { id: '3', name: 'Glass Mountain Wind 1', type: 'Power Plant · New Build', owner: 'Not published', location: 'Reeves County, Texas', state: 'TX', stage: 'Permitting/Planning', capacity: '511.5 MW', capacityValue: 511.5, milestone: '—', industryRaw: 'Power Generation', industryDisplay: 'Power Generation', pastDue: false, needsReview: false },
@@ -37,9 +25,36 @@ const mockProjects: Project[] = [
 ]
 
 export default function ProjectsList() {
+  const [projects, setProjects] = useState<ProjectRow[]>(initialProjects)
+  const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState({ ind: 'all', mw: 'all', stage: 'all', state: 'all', past: false, review: false })
   const [sort, setSort] = useState({ key: 'name', dir: 1 })
+
+  // Fetch projects from API
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        setLoading(true)
+        const params = new URLSearchParams()
+        if (filters.ind !== 'all') params.append('industry', filters.ind)
+        if (filters.stage !== 'all') params.append('stage', filters.stage)
+        if (filters.state !== 'all') params.append('state', filters.state)
+        if (search) params.append('search', search)
+
+        const res = await fetch(`/api/projects?${params.toString()}`)
+        const data = await res.json()
+        setProjects(data.data || initialProjects)
+      } catch (error) {
+        console.error('Failed to fetch projects:', error)
+        setProjects(initialProjects)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProjects()
+  }, [filters, search])
 
   const inBand = (value: number, band: string) => {
     if (band === 'all') return true
@@ -49,19 +64,18 @@ export default function ProjectsList() {
   }
 
   const filtered = useMemo(() => {
-    return mockProjects.filter(p => {
+    return projects.filter(p => {
       const matchSearch = search === '' || p.name.toLowerCase().includes(search.toLowerCase()) ||
-                         p.owner.toLowerCase().includes(search.toLowerCase()) ||
+                         (p.owner?.name || '').toLowerCase().includes(search.toLowerCase()) ||
                          p.location.toLowerCase().includes(search.toLowerCase())
-      const matchInd = filters.ind === 'all' || p.industryRaw === filters.ind
-      const matchMw = inBand(p.capacityValue, filters.mw)
+      const matchMw = inBand(p.capacity_mw || 0, filters.mw)
       const matchStage = filters.stage === 'all' || p.stage === filters.stage
       const matchState = filters.state === 'all' || p.state === filters.state
-      const matchPast = !filters.past || p.pastDue
-      const matchReview = !filters.review || p.needsReview
-      return matchSearch && matchInd && matchMw && matchStage && matchState && matchPast && matchReview
+      const matchPast = !filters.past || p.past_due
+      const matchReview = !filters.review || p.needs_review
+      return matchSearch && matchMw && matchStage && matchState && matchPast && matchReview
     })
-  }, [search, filters])
+  }, [projects, search, filters])
 
   const sorted = useMemo(() => {
     const copy = [...filtered]
@@ -69,11 +83,13 @@ export default function ProjectsList() {
       let aVal: any = sort.key === 'name' ? a.name : a[sort.key as keyof Project]
       let bVal: any = sort.key === 'name' ? b.name : b[sort.key as keyof Project]
 
-      if (sort.key === 'mw') {
-        if (a.capacityValue === 0 && b.capacityValue === 0) return 0
-        if (a.capacityValue === 0) return 1
-        if (b.capacityValue === 0) return -1
-        return (a.capacityValue - b.capacityValue) * sort.dir
+      if (sort.key === 'capacity_mw') {
+        const aCapacity = a.capacity_mw || 0
+        const bCapacity = b.capacity_mw || 0
+        if (aCapacity === 0 && bCapacity === 0) return 0
+        if (aCapacity === 0) return 1
+        if (bCapacity === 0) return -1
+        return (aCapacity - bCapacity) * sort.dir
       }
 
       if (typeof aVal === 'string' && typeof bVal === 'string') {
@@ -234,7 +250,7 @@ export default function ProjectsList() {
 
       {/* Result Bar */}
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.4rem 1rem', fontSize: '0.85rem', color: '#5A5D78' }}>
-        <span>Showing <strong style={{ color: '#1C0140', fontVariantNumeric: 'tabular-nums' }}>{sorted.length}</strong> of <strong style={{ color: '#1C0140' }}>4,081</strong> projects</span>
+        <span>{loading ? 'Loading...' : `Showing ${sorted.length} of ${projects.length} projects`}</span>
         <button onClick={() => setFilters({ ind: 'all', mw: 'all', stage: 'all', state: 'all', past: false, review: false })} style={{ fontFamily: 'inherit', fontSize: '0.82rem', background: 'none', border: 'none', cursor: 'pointer', color: '#376BE9', fontWeight: 600, padding: 0, marginLeft: 'auto' }}>
           Clear filters
         </button>
@@ -253,11 +269,11 @@ export default function ProjectsList() {
               <th onClick={() => setSort({ key: 'stage', dir: sort.key === 'stage' ? -sort.dir : 1 })} style={{ position: 'sticky', top: 0, zIndex: 1, background: '#E9EBF5', fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#5A5D78', textAlign: 'left', padding: '0.6rem 0.8rem', borderBottom: '1px solid #D6D9E8', cursor: 'pointer' }}>
                 Stage <span style={{ opacity: sort.key === 'stage' ? 1 : 0.45 }}>{sort.key === 'stage' && (sort.dir === 1 ? '↑' : '↓') || '↕'}</span>
               </th>
-              <th onClick={() => setSort({ key: 'capacityValue', dir: sort.key === 'capacityValue' ? -sort.dir : 1 })} style={{ position: 'sticky', top: 0, zIndex: 1, background: '#E9EBF5', fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#5A5D78', textAlign: 'left', padding: '0.6rem 0.8rem', borderBottom: '1px solid #D6D9E8', cursor: 'pointer' }}>
-                Capacity <span style={{ opacity: sort.key === 'capacityValue' ? 1 : 0.45 }}>{sort.key === 'capacityValue' && (sort.dir === 1 ? '↑' : '↓') || '↕'}</span>
+              <th onClick={() => setSort({ key: 'capacity_mw', dir: sort.key === 'capacity_mw' ? -sort.dir : 1 })} style={{ position: 'sticky', top: 0, zIndex: 1, background: '#E9EBF5', fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#5A5D78', textAlign: 'left', padding: '0.6rem 0.8rem', borderBottom: '1px solid #D6D9E8', cursor: 'pointer' }}>
+                Capacity <span style={{ opacity: sort.key === 'capacity_mw' ? 1 : 0.45 }}>{sort.key === 'capacity_mw' && (sort.dir === 1 ? '↑' : '↓') || '↕'}</span>
               </th>
-              <th onClick={() => setSort({ key: 'milestone', dir: sort.key === 'milestone' ? -sort.dir : 1 })} style={{ position: 'sticky', top: 0, zIndex: 1, background: '#E9EBF5', fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#5A5D78', textAlign: 'left', padding: '0.6rem 0.8rem', borderBottom: '1px solid #D6D9E8', cursor: 'pointer' }}>
-                Milestone <span style={{ opacity: sort.key === 'milestone' ? 1 : 0.45 }}>{sort.key === 'milestone' && (sort.dir === 1 ? '↑' : '↓') || '↕'}</span>
+              <th onClick={() => setSort({ key: 'milestone_date', dir: sort.key === 'milestone_date' ? -sort.dir : 1 })} style={{ position: 'sticky', top: 0, zIndex: 1, background: '#E9EBF5', fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#5A5D78', textAlign: 'left', padding: '0.6rem 0.8rem', borderBottom: '1px solid #D6D9E8', cursor: 'pointer' }}>
+                Milestone <span style={{ opacity: sort.key === 'milestone_date' ? 1 : 0.45 }}>{sort.key === 'milestone_date' && (sort.dir === 1 ? '↑' : '↓') || '↕'}</span>
               </th>
             </tr>
           </thead>
@@ -268,17 +284,17 @@ export default function ProjectsList() {
                   <a href="#" style={{ fontWeight: 600, color: '#376BE9', display: 'block', lineHeight: 1.3, textDecoration: 'none' }}>{p.name}</a>
                   <span style={{ fontSize: '0.74rem', color: '#5A5D78', display: 'block', marginTop: '0.1rem' }}>{p.type}</span>
                 </td>
-                <td style={{ padding: '0.6rem 0.8rem' }}>{p.owner}</td>
+                <td style={{ padding: '0.6rem 0.8rem' }}>{p.owner?.name || '—'}</td>
                 <td style={{ padding: '0.6rem 0.8rem' }}>{p.location}</td>
                 <td style={{ padding: '0.6rem 0.8rem' }}>
                   <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.62rem', letterSpacing: '0.05em', padding: '0.16rem 0.42rem', borderRadius: '2px', background: p.stage === 'Under Construction' ? '#E4EBFC' : '#E9EBF5', color: p.stage === 'Under Construction' ? '#376BE9' : '#5A5D78', whiteSpace: 'nowrap' }}>
                     {p.stage}
                   </span>
                 </td>
-                <td style={{ padding: '0.6rem 0.8rem', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{p.capacity || '—'}</td>
-                <td style={{ padding: '0.6rem 0.8rem', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: p.pastDue ? '#8A6A12' : 'inherit', fontWeight: p.pastDue ? 600 : 'normal' }}>
-                  {p.milestone}
-                  {p.pastDue && <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.62rem', color: '#8A6A12', marginTop: '0.1rem' }}>3 yr overdue</div>}
+                <td style={{ padding: '0.6rem 0.8rem', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{p.capacity_mw ? `${p.capacity_mw.toLocaleString()} ${p.capacity_unit || 'MW'}` : '—'}</td>
+                <td style={{ padding: '0.6rem 0.8rem', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: p.past_due ? '#8A6A12' : 'inherit', fontWeight: p.past_due ? 600 : 'normal' }}>
+                  {p.milestone_date ? new Date(p.milestone_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short' }) : '—'}
+                  {p.past_due && <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.62rem', color: '#8A6A12', marginTop: '0.1rem' }}>overdue</div>}
                 </td>
               </tr>
             ))}
