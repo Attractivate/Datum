@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import type { Company } from '@/lib/types'
 
-const mockCompanies = [
+const mockCompanies: (Company & { projects_count: number })[] = [
   {
     id: '1',
     name: 'Southern Company',
@@ -102,6 +103,8 @@ const sortOptions = [
 ]
 
 export default function CompaniesPage() {
+  const [companies, setCompanies] = useState<Company[]>(mockCompanies)
+  const [loading, setLoading] = useState(false)
   const [view, setView] = useState<'grid' | 'list' | 'table'>('grid')
   const [industry, setIndustry] = useState('All sectors')
   const [role, setRole] = useState('All roles')
@@ -110,7 +113,30 @@ export default function CompaniesPage() {
   const [search, setSearch] = useState('')
   const [perPage, setPerPage] = useState('100')
 
-  const filteredCompanies = mockCompanies.filter((company) => {
+  // Fetch companies from API
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        setLoading(true)
+        const params = new URLSearchParams()
+        if (industry !== 'All sectors') params.append('industry', industry)
+        if (search) params.append('search', search)
+
+        const res = await fetch(`/api/companies?${params.toString()}`)
+        const data = await res.json()
+        setCompanies(data.data || mockCompanies)
+      } catch (error) {
+        console.error('Failed to fetch companies:', error)
+        setCompanies(mockCompanies)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCompanies()
+  }, [industry, search])
+
+  const filteredCompanies = companies.filter((company) => {
     const matchSearch =
       search === '' ||
       company.name.toLowerCase().includes(search.toLowerCase())

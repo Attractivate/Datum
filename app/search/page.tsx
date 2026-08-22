@@ -1,9 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
-const mockResults = [
+interface SearchResult {
+  id: string
+  title: string
+  type: 'Project' | 'Company' | 'Contact'
+  meta: string[]
+  desc: string
+  tags: string[]
+}
+
+const mockResults: SearchResult[] = [
   {
     id: '1',
     title: 'Permian Solar II, Texas',
@@ -47,8 +56,68 @@ const mockResults = [
 ]
 
 export default function SearchPage() {
+  const [results, setResults] = useState<SearchResult[]>(mockResults)
+  const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('solar texas 2026')
   const [tab, setTab] = useState('all')
+
+  // Fetch search results from API
+  useEffect(() => {
+    if (search.length < 2) {
+      setResults(mockResults)
+      return
+    }
+
+    const fetchResults = async () => {
+      try {
+        setLoading(true)
+        const params = new URLSearchParams()
+        params.append('q', search)
+        params.append('limit', '50')
+
+        const res = await fetch(`/api/search?${params.toString()}`)
+        const data = await res.json()
+
+        // Transform API results to UI format
+        if (data.success && data.data) {
+          const transformed: SearchResult[] = []
+
+          data.data.projects?.forEach((p: any) => {
+            transformed.push({
+              id: p.id,
+              title: p.name,
+              type: 'Project',
+              meta: [p.capacity_mw ? `${p.capacity_mw} MW` : '', p.location, p.stage],
+              desc: p.description || p.type || '',
+              tags: [p.name],
+            })
+          })
+
+          data.data.companies?.forEach((c: any) => {
+            transformed.push({
+              id: c.id,
+              title: c.name,
+              type: 'Company',
+              meta: [c.location, `${c.projects_count} projects tracked`],
+              desc: c.description || '',
+              tags: [c.name],
+            })
+          })
+
+          setResults(transformed.length > 0 ? transformed : mockResults)
+        } else {
+          setResults(mockResults)
+        }
+      } catch (error) {
+        console.error('Failed to fetch search results:', error)
+        setResults(mockResults)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchResults()
+  }, [search])
 
   return (
     <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem', width: '100%' }}>
@@ -203,7 +272,7 @@ export default function SearchPage() {
           {/* Results List */}
           {tab === 'all' && (
             <div>
-              {mockResults.map((result) => (
+              {results.map((result) => (
                 <div
                   key={result.id}
                   style={{

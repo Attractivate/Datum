@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import type { Contact } from '@/lib/types'
 
-const mockContacts = [
+const mockContacts: Contact[] = [
   {
     id: '1',
     name: 'James Rodriguez',
@@ -127,11 +128,37 @@ const mockContacts = [
 ]
 
 export default function ContactsPage() {
+  const [contacts, setContacts] = useState<Contact[]>(mockContacts)
+  const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
   const [role, setRole] = useState('All roles')
   const [industry, setIndustry] = useState('All industries')
   const [size, setSize] = useState('All sizes')
   const [perPage, setPerPage] = useState('50')
+
+  // Fetch contacts from API
+  useEffect(() => {
+    const fetchContacts = async () => {
+      try {
+        setLoading(true)
+        const params = new URLSearchParams()
+        if (industry !== 'All industries') params.append('industry', industry)
+        if (search) params.append('search', search)
+        params.append('limit', '50')
+
+        const res = await fetch(`/api/contacts?${params.toString()}`)
+        const data = await res.json()
+        setContacts(data.data || mockContacts)
+      } catch (error) {
+        console.error('Failed to fetch contacts:', error)
+        setContacts(mockContacts)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchContacts()
+  }, [industry, search])
 
   return (
     <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem', width: '100%' }}>
@@ -214,7 +241,7 @@ export default function ContactsPage() {
             </tr>
           </thead>
           <tbody>
-            {mockContacts.map((contact) => (
+            {contacts.map((contact) => (
               <tr key={contact.id} style={{ borderBottom: '1px solid #f0f0f0', transition: 'background 0.1s' }} onMouseEnter={(e) => { e.currentTarget.style.background = '#f0f0f0'; }} onMouseLeave={(e) => { e.currentTarget.style.background = '#FFFFFF'; }}>
                 <td style={{ padding: '0.8rem', fontSize: '0.9rem' }}>
                   <div style={{ fontWeight: 600, color: '#376BE9' }}>{contact.name}</div>
