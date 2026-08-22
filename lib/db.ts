@@ -2,7 +2,6 @@
 import { supabase } from './supabase'
 import type {
   Project,
-  ProjectWithRelations,
   Company,
   Contact,
   ContactWithCompany,
@@ -17,17 +16,8 @@ import type {
 export async function getProjects(filters?: ProjectFilters) {
   let query = supabase.from('projects').select('*')
 
-  if (filters?.industry) {
-    query = query.eq('industry_id', filters.industry)
-  }
   if (filters?.stage) {
     query = query.eq('stage', filters.stage)
-  }
-  if (filters?.state) {
-    query = query.eq('state', filters.state)
-  }
-  if (filters?.past_due !== undefined) {
-    query = query.eq('past_due', filters.past_due)
   }
   if (filters?.search) {
     query = query.ilike('name', `%${filters.search}%`)
@@ -41,24 +31,12 @@ export async function getProjects(filters?: ProjectFilters) {
 export async function getProjectById(id: string) {
   const { data, error } = await supabase
     .from('projects')
-    .select(
-      `
-      *,
-      industry:industries(*),
-      owner:companies!owner_id(*),
-      developer:companies!developer_id(*),
-      epc:companies!epc_id(*),
-      oem:companies!oem_id(*),
-      milestones:project_milestones(*),
-      updates:project_updates(*, company:companies(*)),
-      technologies:project_technologies(*, technology:technologies(*))
-    `
-    )
+    .select('*')
     .eq('id', id)
     .single()
 
   if (error) throw error
-  return data as ProjectWithRelations
+  return data as Project
 }
 
 export async function createProject(project: Partial<Project>) {
@@ -71,14 +49,12 @@ export async function createProject(project: Partial<Project>) {
 export async function getCompanies(filters?: CompanyFilters) {
   let query = supabase.from('companies').select('*')
 
-  if (filters?.industry) {
-    query = query.eq('industry_id', filters.industry)
-  }
   if (filters?.search) {
     query = query.ilike('name', `%${filters.search}%`)
   }
 
-  const { data, error } = await query.order('projects_count', { ascending: false })
+  const { data, error } = await query.order('name', { ascending: true })
+  console.log('getCompanies - data:', data, 'error:', error)
   if (error) throw error
   return data as Company[]
 }
@@ -86,19 +62,12 @@ export async function getCompanies(filters?: CompanyFilters) {
 export async function getCompanyById(id: string) {
   const { data, error } = await supabase
     .from('companies')
-    .select(
-      `
-      *,
-      industry:industries(*),
-      projects:projects(*, industry:industries(*)),
-      contacts:contacts(*)
-    `
-    )
+    .select('*')
     .eq('id', id)
     .single()
 
   if (error) throw error
-  return data
+  return data as Company
 }
 
 export async function createCompany(company: Partial<Company>) {
@@ -109,7 +78,7 @@ export async function createCompany(company: Partial<Company>) {
 
 // Contacts
 export async function getContacts(filters?: ContactFilters, limit = 50, offset = 0) {
-  let query = supabase.from('contacts').select('*, company:companies(*)')
+  let query = supabase.from('contacts').select('*')
 
   if (filters?.company_id) {
     query = query.eq('company_id', filters.company_id)
@@ -123,18 +92,18 @@ export async function getContacts(filters?: ContactFilters, limit = 50, offset =
     .range(offset, offset + limit - 1)
 
   if (error) throw error
-  return { data: data as ContactWithCompany[], total: count || 0 }
+  return { data: data as Contact[], total: count || 0 }
 }
 
 export async function getContactById(id: string) {
   const { data, error } = await supabase
     .from('contacts')
-    .select('*, company:companies(*)')
+    .select('*')
     .eq('id', id)
     .single()
 
   if (error) throw error
-  return data as ContactWithCompany
+  return data as Contact
 }
 
 // Industries
@@ -151,19 +120,12 @@ export async function getIndustries() {
 export async function getIndustryBySlug(slug: string) {
   const { data, error } = await supabase
     .from('industries')
-    .select(
-      `
-      *,
-      projects:projects(*),
-      companies:companies(*),
-      technologies:industry_technologies(*, technology:technologies(*))
-    `
-    )
+    .select('*')
     .eq('slug', slug)
     .single()
 
   if (error) throw error
-  return data
+  return data as Industry
 }
 
 // Project Updates (What Changed feed)
@@ -172,24 +134,14 @@ export async function getProjectUpdates(
   limit = 50,
   offset = 0
 ) {
-  let query = supabase.from('project_updates').select(
-    `
-    *,
-    project:projects(*, industry:industries(*), owner:companies!owner_id(*)),
-    company:companies(*)
-  `
-  )
-
-  if (filters?.is_significant) {
-    query = query.eq('is_significant', true)
-  }
+  let query = supabase.from('project_updates').select('*')
 
   const { data, error } = await query
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
   if (error) throw error
-  return data as (ProjectUpdate & { project: ProjectWithRelations; company?: Company })[]
+  return data as ProjectUpdate[]
 }
 
 // Search across projects and companies
@@ -199,17 +151,17 @@ export async function search(query: string, limit = 50) {
   const [projects, companies, contacts] = await Promise.all([
     supabase
       .from('projects')
-      .select('*, industry:industries(*), owner:companies!owner_id(*)')
+      .select('*')
       .ilike('name', searchTerm)
       .limit(Math.ceil(limit / 3)),
     supabase
       .from('companies')
-      .select('*, industry:industries(*)')
+      .select('*')
       .ilike('name', searchTerm)
       .limit(Math.ceil(limit / 3)),
     supabase
       .from('contacts')
-      .select('*, company:companies(*)')
+      .select('*')
       .or(`name.ilike.${searchTerm},title.ilike.${searchTerm}`)
       .limit(Math.ceil(limit / 3)),
   ])
