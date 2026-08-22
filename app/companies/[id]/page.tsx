@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 interface TimelineEvent {
@@ -44,10 +44,36 @@ const mockSources = [
   { title: 'BMS announces $2.3bn Houston manufacturing investment', source: 'Google News: Pharma Plants · 11 Aug 2026' },
 ]
 
-export default function CompanyDetail() {
+export default function CompanyDetail({ params }: { params: { id: string } }) {
+  const [company, setCompany] = useState<any>(null)
+  const [timeline, setTimeline] = useState<TimelineEvent[]>(mockTimeline)
+  const [projects, setProjects] = useState<ProjectRecord[]>(mockProjects)
+  const [sources, setSources] = useState(mockSources)
+  const [loading, setLoading] = useState(false)
   const [timelineFilter, setTimelineFilter] = useState('all')
 
-  const filteredTimeline = timelineFilter === 'all' ? mockTimeline : []
+  // Fetch company data from API
+  useEffect(() => {
+    const fetchCompany = async () => {
+      try {
+        setLoading(true)
+        const res = await fetch(`/api/companies/${params.id}`)
+        const data = await res.json()
+        if (data.success && data.data) {
+          setCompany(data.data)
+          // Note: Transform API response as needed to match UI expectations
+        }
+      } catch (error) {
+        console.error('Failed to fetch company:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCompany()
+  }, [params.id])
+
+  const filteredTimeline = timelineFilter === 'all' ? timeline : []
 
   return (
     <main style={{ maxWidth: '84rem', margin: '0 auto', padding: '1.4rem clamp(1rem, 3vw, 2rem) 5rem', display: 'flex', flexDirection: 'column', gap: '1.4rem' }}>

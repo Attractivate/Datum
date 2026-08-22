@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 interface Company {
@@ -69,8 +69,36 @@ const mockMilestones: Milestone[] = [
   { id: '5', phase: 'Phase 5: Commercial Operation', timeframe: 'Q3 2030 onwards', description: 'Full commercial operation and revenue-generating phase' },
 ]
 
-export default function ProjectDetail() {
+export default function ProjectDetail({ params }: { params: { id: string } }) {
+  const [project, setProject] = useState(mockProject)
+  const [companies, setCompanies] = useState<Company[]>(mockCompanies)
+  const [updates, setUpdates] = useState<Update[]>(mockUpdates)
+  const [milestones, setMilestones] = useState<Milestone[]>(mockMilestones)
+  const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('updates')
+
+  // Fetch project data from API
+  useEffect(() => {
+    const fetchProject = async () => {
+      try {
+        setLoading(true)
+        const res = await fetch(`/api/projects/${params.id}`)
+        const data = await res.json()
+        if (data.success && data.data) {
+          setProject(data.data)
+          setCompanies(data.data.companies || mockCompanies)
+          setUpdates(data.data.updates || mockUpdates)
+          setMilestones(data.data.milestones || mockMilestones)
+        }
+      } catch (error) {
+        console.error('Failed to fetch project:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProject()
+  }, [params.id])
 
   return (
     <main style={{ maxWidth: '96rem', margin: '0 auto', padding: '1.4rem clamp(1rem, 3vw, 2rem) 5rem', display: 'flex', flexDirection: 'column', gap: '1.8rem' }}>
