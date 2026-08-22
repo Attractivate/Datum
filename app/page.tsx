@@ -240,19 +240,62 @@ const overdueProjects = [
 ]
 
 export default function WhatChangedPage() {
+  const [events, setEvents] = useState<Event[]>(mockEvents)
+  const [loading, setLoading] = useState(false)
   const [industryFilter, setIndustryFilter] = useState('all')
   const [significanceFilter, setSignificanceFilter] = useState('all')
 
+  // Fetch updates from API
+  useEffect(() => {
+    const fetchUpdates = async () => {
+      try {
+        setLoading(true)
+        const params = new URLSearchParams()
+        params.append('limit', '150')
+        if (significanceFilter === 'sig') params.append('significant', 'true')
+
+        const res = await fetch(`/api/updates?${params.toString()}`)
+        const data = await res.json()
+
+        if (data.success && data.data) {
+          // Transform API updates to event format
+          const transformed: Event[] = data.data.map((u: any) => ({
+            id: u.id,
+            day: new Date(u.created_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
+            date: u.created_at,
+            industry: u.project?.industry?.name || 'Unknown',
+            significant: u.is_significant,
+            type: u.event_type,
+            title: u.title,
+            project: u.project?.name || '',
+            company: u.company?.name || '',
+            location: u.project?.location || '',
+            source: 'News pipeline',
+            mergedSources: undefined,
+          }))
+          setEvents(transformed)
+        }
+      } catch (error) {
+        console.error('Failed to fetch updates:', error)
+        setEvents(mockEvents)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUpdates()
+  }, [significanceFilter])
+
   const dayGroups = useMemo(() => {
     const groups = new Map<string, Event[]>()
-    mockEvents.forEach(event => {
+    events.forEach(event => {
       if (!groups.has(event.day)) {
         groups.set(event.day, [])
       }
       groups.get(event.day)!.push(event)
     })
     return Array.from(groups.entries())
-  }, [])
+  }, [events])
 
   const filteredDayGroups = useMemo(() => {
     return dayGroups.map(([day, events]) => {

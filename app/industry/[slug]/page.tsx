@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 const industryData: Record<string, any> = {
@@ -311,10 +311,33 @@ const industryData: Record<string, any> = {
 }
 
 export default function IndustryPage({ params }: { params: { slug: string } }) {
-  const industry = industryData[params.slug] || industryData['power-generation']
+  const [industry, setIndustry] = useState(industryData[params.slug] || industryData['power-generation'])
+  const [loading, setLoading] = useState(false)
   const [technology, setTechnology] = useState('All technologies')
   const [stage, setStage] = useState('All stages')
   const [region, setRegion] = useState('All regions')
+
+  // Fetch industry data from API
+  useEffect(() => {
+    const fetchIndustry = async () => {
+      try {
+        setLoading(true)
+        const res = await fetch(`/api/industries/${params.slug}`)
+        const data = await res.json()
+        if (data.success && data.data) {
+          // Transform API response to UI format
+          setIndustry(data.data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch industry:', error)
+        // Fall back to mock data
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchIndustry()
+  }, [params.slug])
 
   return (
     <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem' }}>
