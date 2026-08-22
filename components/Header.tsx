@@ -30,6 +30,7 @@ export default function Header() {
             <Link href="/" className="nav-link">What Changed</Link>
             <Link href="/projects" className="nav-link">Projects</Link>
             <Link href="/companies" className="nav-link">Companies</Link>
+            <Link href="/industries" className="nav-link">Industries</Link>
             <Link href="/contacts" className="nav-link">Contacts</Link>
             <Link href="/search" className="nav-link">Search</Link>
           </nav>
