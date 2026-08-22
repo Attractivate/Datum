@@ -119,34 +119,7 @@ export default function CompaniesPage() {
   })
 
   return (
-    <main style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      {/* Topbar */}
-      <header style={{ background: '#FFFFFF', borderBottom: '1px solid #e0e0e0', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: '1400px', margin: '0 auto', padding: '1rem 2rem', gap: '3rem' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-            <span style={{ fontWeight: 700, fontSize: '1.2rem', color: '#376BE9' }}>Datum</span>
-            <span style={{ fontSize: '0.75rem', color: '#666', letterSpacing: '0.05em', textTransform: 'uppercase' }}>T5 Partners</span>
-          </div>
-          <nav style={{ display: 'flex', gap: '3rem' }}>
-            <Link href="/" style={{ color: '#1a1a1a', textDecoration: 'none', fontSize: '0.95rem', paddingBottom: '0.5rem', borderBottom: '2px solid transparent', transition: 'border-color 0.15s' }}>
-              What Changed
-            </Link>
-            <Link href="/projects" style={{ color: '#1a1a1a', textDecoration: 'none', fontSize: '0.95rem', paddingBottom: '0.5rem', borderBottom: '2px solid transparent', transition: 'border-color 0.15s' }}>
-              Projects
-            </Link>
-            <span style={{ color: '#1a1a1a', fontSize: '0.95rem', paddingBottom: '0.5rem', borderBottom: '2px solid #376BE9' }}>Companies</span>
-            <Link href="/contacts" style={{ color: '#1a1a1a', textDecoration: 'none', fontSize: '0.95rem', paddingBottom: '0.5rem', borderBottom: '2px solid transparent', transition: 'border-color 0.15s' }}>
-              Contacts
-            </Link>
-            <Link href="/search" style={{ color: '#1a1a1a', textDecoration: 'none', fontSize: '0.95rem', paddingBottom: '0.5rem', borderBottom: '2px solid transparent', transition: 'border-color 0.15s' }}>
-              Search
-            </Link>
-          </nav>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem', width: '100%' }}>
+    <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem', width: '100%' }}>
         {/* Breadcrumb */}
         <div style={{ fontSize: '0.9rem', color: '#666', marginBottom: '1.5rem' }}>
           <Link href="/" style={{ color: '#376BE9', textDecoration: 'none' }}>Home</Link>
@@ -386,7 +359,6 @@ export default function CompaniesPage() {
             </div>
           </div>
         </div>
-      </div>
     </main>
   )
 }
