@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:setup": "echo 'Manual database setup required. See SETUP.md for instructions.'"
+    "db:setup": "npx ts-node scripts/setup-db.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",

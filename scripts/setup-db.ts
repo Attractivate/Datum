@@ -6,11 +6,10 @@
  * This script initializes the Supabase database with the schema and seed data.
  *
  * Usage:
- *   npx ts-node scripts/setup-db.ts
+ *   npm run db:setup
  *
  * Requirements:
  *   - NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local
- *   - SUPABASE_SERVICE_ROLE_KEY in .env.local (optional, for faster setup)
  */
 
 import { createClient } from '@supabase/supabase-js'
@@ -21,94 +20,104 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error('Error: NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY/NEXT_PUBLIC_SUPABASE_ANON_KEY must be set')
+  console.error('❌ Error: Environment variables not set')
+  console.log('\nSet these in .env.local:')
+  console.log('  NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co')
+  console.log('  NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key')
+  console.log('  (Optional) SUPABASE_SERVICE_ROLE_KEY=your-service-role-key')
   process.exit(1)
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey)
+const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: { persistSession: false }
+})
 
-async function runSchema() {
-  console.log('📊 Setting up database schema...')
-
+async function checkIfTablesExist() {
   try {
-    const schema = fs.readFileSync(path.join(__dirname, '../lib/schema.sql'), 'utf-8')
+    const { data, error } = await supabase
+      .from('industries')
+      .select('id', { count: 'exact', head: true })
+      .limit(0)
 
-    // Split into individual statements and execute
-    const statements = schema
-      .split(';')
-      .map(s => s.trim())
-      .filter(s => s.length > 0 && !s.startsWith('--'))
-
-    for (const statement of statements) {
-      await supabase.rpc('exec_sql', { sql: statement }).catch(err => {
-        // Try direct execution via query
-        return supabase.from('_migrations').insert({ name: 'schema', executed_at: new Date() })
-      })
+    if (error && error.message.includes('relation')) {
+      return false
     }
-
-    console.log('✅ Schema created successfully')
-  } catch (error) {
-    console.error('❌ Schema setup failed:', error)
-    console.log('\n📝 MANUAL SETUP:')
-    console.log('1. Go to Supabase dashboard: https://app.supabase.com')
-    console.log('2. Select your project')
-    console.log('3. Open SQL Editor')
-    console.log('4. Create a new query')
-    console.log(`5. Copy contents of lib/schema.sql and execute`)
-    console.log(`6. Copy contents of lib/seed.sql and execute`)
+    return true
+  } catch {
+    return false
   }
 }
 
-async function runSeed() {
-  console.log('\n🌱 Seeding database...')
-
-  try {
-    const seed = fs.readFileSync(path.join(__dirname, '../lib/seed.sql'), 'utf-8')
-
-    // Split into individual statements
-    const statements = seed
-      .split(';')
-      .map(s => s.trim())
-      .filter(s => s.length > 0 && !s.startsWith('--'))
-
-    for (const statement of statements) {
-      await supabase.rpc('exec_sql', { sql: statement }).catch(err => {
-        console.warn(`⚠️  Seed statement skipped (may already exist)`)
-      })
-    }
-
-    console.log('✅ Database seeded successfully')
-  } catch (error) {
-    console.error('❌ Seed failed:', error)
-  }
+async function printInstructions() {
+  console.log('\n📝 MANUAL SETUP REQUIRED\n')
+  console.log('1. Go to your Supabase project: https://app.supabase.com')
+  console.log('2. Click "SQL Editor" → "New Query"')
+  console.log('3. Copy and paste the schema from lib/schema.sql')
+  console.log('4. Execute the query')
+  console.log('5. Create another new query')
+  console.log('6. Copy and paste the seed data from lib/seed.sql')
+  console.log('7. Execute the query')
+  console.log('\nThen run: npm run db:setup')
+  console.log('It will verify that the tables are created.\n')
 }
 
 async function verifySetup() {
-  console.log('\n✓ Verifying setup...')
+  console.log('✓ Verifying setup...\n')
 
   try {
-    const { data: industries } = await supabase.from('industries').select('*').limit(1)
-    console.log(`✅ Industries table exists (${industries?.length || 0} records)`)
+    const { data: industries, error: indError } = await supabase
+      .from('industries')
+      .select('*', { count: 'exact' })
+      .limit(1)
 
-    const { data: projects } = await supabase.from('projects').select('*').limit(1)
-    console.log(`✅ Projects table exists (${projects?.length || 0} records)`)
+    if (indError) throw indError
+    console.log(`✅ Industries table: ${industries?.length || 0} records`)
 
-    const { data: companies } = await supabase.from('companies').select('*').limit(1)
-    console.log(`✅ Companies table exists (${companies?.length || 0} records)`)
+    const { data: projects, error: projError } = await supabase
+      .from('projects')
+      .select('*', { count: 'exact' })
+      .limit(1)
+
+    if (projError) throw projError
+    console.log(`✅ Projects table: ${projects?.length || 0} records`)
+
+    const { data: companies, error: compError } = await supabase
+      .from('companies')
+      .select('*', { count: 'exact' })
+      .limit(1)
+
+    if (compError) throw compError
+    console.log(`✅ Companies table: ${companies?.length || 0} records`)
+
+    const { data: contacts, error: contError } = await supabase
+      .from('contacts')
+      .select('*', { count: 'exact' })
+      .limit(1)
+
+    if (contError) throw contError
+    console.log(`✅ Contacts table: ${contacts?.length || 0} records`)
 
     console.log('\n🎉 Database setup complete!')
-    console.log('ℹ️  The app should now fetch real data from Supabase.')
+    console.log('   Restart your dev server: npm run dev')
+    console.log('   The app will now fetch real data from Supabase.\n')
     process.exit(0)
-  } catch (error) {
-    console.error('❌ Verification failed:', error)
+  } catch (error: any) {
+    console.error('❌ Tables not found or other error:', error.message)
+    await printInstructions()
     process.exit(1)
   }
 }
 
 async function main() {
   console.log('🚀 Datum Database Setup\n')
-  await runSchema()
-  await runSeed()
+
+  const tablesExist = await checkIfTablesExist()
+
+  if (!tablesExist) {
+    await printInstructions()
+    process.exit(1)
+  }
+
   await verifySetup()
 }
 
