@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
 
 interface Company {
@@ -69,7 +69,8 @@ const mockMilestones: Milestone[] = [
   { id: '5', phase: 'Phase 5: Commercial Operation', timeframe: 'Q3 2030 onwards', description: 'Full commercial operation and revenue-generating phase' },
 ]
 
-export default function ProjectDetail({ params }: { params: { id: string } }) {
+export default function ProjectDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const [project, setProject] = useState(mockProject)
   const [companies, setCompanies] = useState<Company[]>(mockCompanies)
   const [updates, setUpdates] = useState<Update[]>(mockUpdates)
@@ -82,7 +83,7 @@ export default function ProjectDetail({ params }: { params: { id: string } }) {
     const fetchProject = async () => {
       try {
         setLoading(true)
-        const res = await fetch(`/api/projects/${params.id}`)
+        const res = await fetch(`/api/projects/${id}`)
         const data = await res.json()
         if (data.success && data.data) {
           setProject(data.data)
@@ -98,7 +99,7 @@ export default function ProjectDetail({ params }: { params: { id: string } }) {
     }
 
     fetchProject()
-  }, [params.id])
+  }, [id])
 
   return (
     <main style={{ maxWidth: '96rem', margin: '0 auto', padding: '1.4rem clamp(1rem, 3vw, 2rem) 5rem', display: 'flex', flexDirection: 'column', gap: '1.8rem' }}>

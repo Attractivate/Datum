@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
 
 interface TimelineEvent {
@@ -44,7 +44,8 @@ const mockSources = [
   { title: 'BMS announces $2.3bn Houston manufacturing investment', source: 'Google News: Pharma Plants · 11 Aug 2026' },
 ]
 
-export default function CompanyDetail({ params }: { params: { id: string } }) {
+export default function CompanyDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const [company, setCompany] = useState<any>(null)
   const [timeline, setTimeline] = useState<TimelineEvent[]>(mockTimeline)
   const [projects, setProjects] = useState<ProjectRecord[]>(mockProjects)
@@ -57,7 +58,7 @@ export default function CompanyDetail({ params }: { params: { id: string } }) {
     const fetchCompany = async () => {
       try {
         setLoading(true)
-        const res = await fetch(`/api/companies/${params.id}`)
+        const res = await fetch(`/api/companies/${id}`)
         const data = await res.json()
         if (data.success && data.data) {
           setCompany(data.data)
@@ -71,7 +72,7 @@ export default function CompanyDetail({ params }: { params: { id: string } }) {
     }
 
     fetchCompany()
-  }, [params.id])
+  }, [id])
 
   const filteredTimeline = timelineFilter === 'all' ? timeline : []
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
 
 const industryData: Record<string, any> = {
@@ -310,8 +310,9 @@ const industryData: Record<string, any> = {
   },
 }
 
-export default function IndustryPage({ params }: { params: { slug: string } }) {
-  const [industry, setIndustry] = useState(industryData[params.slug] || industryData['power-generation'])
+export default function IndustryPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params)
+  const [industry, setIndustry] = useState(industryData[slug] || industryData['power-generation'])
   const [loading, setLoading] = useState(false)
   const [technology, setTechnology] = useState('All technologies')
   const [stage, setStage] = useState('All stages')
@@ -322,7 +323,7 @@ export default function IndustryPage({ params }: { params: { slug: string } }) {
     const fetchIndustry = async () => {
       try {
         setLoading(true)
-        const res = await fetch(`/api/industries/${params.slug}`)
+        const res = await fetch(`/api/industries/${slug}`)
         const data = await res.json()
         if (data.success && data.data) {
           // Transform API response to UI format
@@ -337,7 +338,7 @@ export default function IndustryPage({ params }: { params: { slug: string } }) {
     }
 
     fetchIndustry()
-  }, [params.slug])
+  }, [slug])
 
   return (
     <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem' }}>

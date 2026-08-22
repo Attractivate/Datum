@@ -1,8 +1,9 @@
 import { getProjectById } from '@/lib/db'
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const project = await getProjectById(params.id)
+    const { id } = await params
+    const project = await getProjectById(id)
     return Response.json({ success: true, data: project })
   } catch (error) {
     console.error('Error fetching project:', error)

@@ -1,8 +1,9 @@
 import { getIndustryBySlug } from '@/lib/db'
 
-export async function GET(request: Request, { params }: { params: { slug: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ slug: string }> }) {
   try {
-    const industry = await getIndustryBySlug(params.slug)
+    const { slug } = await params
+    const industry = await getIndustryBySlug(slug)
     return Response.json({ success: true, data: industry })
   } catch (error) {
     console.error('Error fetching industry:', error)
