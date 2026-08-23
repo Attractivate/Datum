@@ -314,6 +314,32 @@ export async function getCompanies(filters?: CompanyFilters) {
   }
 }
 
+// Get company details from Airtable by record ID
+export async function getCompanyByAirtableId(airtableId: string) {
+  try {
+    const records = await fetchAirtableRecords('Companies', { maxRecords: 100000 })
+    const record = records.find(r => r.id === airtableId)
+
+    if (!record) {
+      throw new Error(`Company not found: ${airtableId}`)
+    }
+
+    const company = mapAirtableCompanyRecord(record)
+
+    // Fetch projects to calculate stats
+    const projects = await getProjects()
+    const stats = await getCompanyStatsWithRoles(airtableId, projects)
+
+    return {
+      ...company,
+      stats,
+    }
+  } catch (error) {
+    console.error('Error fetching company from Airtable:', error)
+    throw error
+  }
+}
+
 // Helper function to calculate company statistics by role
 export async function getCompanyStatsWithRoles(companyId: string, projects: Project[]) {
   try {
