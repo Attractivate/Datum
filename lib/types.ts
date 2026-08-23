@@ -31,27 +31,36 @@ export interface Project {
   id: string
   name: string
   type: string
-  description: string
-  industry_id: string
+  description?: string
+  industry_id?: string
   location: string
-  state: string
+  state?: string
   capacity_mw: number
+  capacity?: string
   capacity_unit: string
   stage: string
-  status: string
-  owner_id: string | null
-  developer_id: string | null
-  epc_id: string | null
-  oem_id: string | null
-  first_seen_date: string
-  last_updated_date: string
-  milestone_date: string
-  milestone_description: string
-  past_due: boolean
-  needs_review: boolean
-  created_at: string
-  updated_at: string
-  created_by: string
+  status?: string
+  owner?: string | string[]
+  developer_id?: string | null
+  developer?: string | string[]
+  developer_info?: string
+  epc?: string | string[] | null
+  epc_award?: string | string[] | boolean | null
+  oem?: string | string[] | null
+  oem_award?: string | string[] | boolean | null
+  key_personnel?: string | string[]
+  first_seen_date?: string
+  last_updated_date?: string
+  milestone_date?: string
+  milestone?: string
+  milestone_description?: string
+  source_url?: string
+  past_due?: boolean
+  needs_review?: boolean
+  created_at?: string
+  updated_at?: string
+  created_by?: string
+  industryRaw?: string
 }
 
 export interface ProjectWithRelations extends Project {
@@ -149,9 +158,11 @@ export interface Source {
 // Query filter types
 export interface ProjectFilters {
   industry?: string
+  type?: string
   stage?: string
   location?: string
   state?: string
+  capacity?: string
   past_due?: boolean
   needs_review?: boolean
   search?: string

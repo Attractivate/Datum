@@ -1,9 +1,9 @@
-import { getProjectById } from '@/lib/db'
+import { getProjectByIdFromAirtable } from '@/lib/db'
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const project = await getProjectById(id)
+    const project = await getProjectByIdFromAirtable(id)
     return Response.json({ success: true, data: project })
   } catch (error) {
     console.error('Error fetching project:', error)

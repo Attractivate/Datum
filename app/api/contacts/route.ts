@@ -1,4 +1,5 @@
 import { getContacts } from '@/lib/db'
+import { fetchAirtableRecords } from '@/lib/airtable'
 import { type ContactFilters } from '@/lib/types'
 
 export async function GET(request: Request) {
@@ -15,6 +16,16 @@ export async function GET(request: Request) {
     }
 
     const { data, total } = await getContacts(filters, limit, offset)
+
+    // Debug: log raw Airtable data on first call
+    if (limit === 50 && offset === 0) {
+      try {
+        const rawRecords = await fetchAirtableRecords('Contacts', { maxRecords: 5 })
+        console.log('Raw Airtable Contacts (first 5):', JSON.stringify(rawRecords.slice(0, 1), null, 2))
+      } catch (e) {
+        console.log('Error fetching raw records:', e)
+      }
+    }
 
     return Response.json({
       success: true,

@@ -3,33 +3,40 @@
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import type { Project } from '@/lib/types'
+import { industriesConfig, capacityBands } from '@/lib/industries-config'
 
 interface ProjectRow extends Project {
-  owner?: { name: string }
+  owner?: string | { name: string }
+  industryRaw?: string
 }
 
-const initialProjects: ProjectRow[] = [
-  { id: '1', name: 'Project Matador Gas Plant (PMG)', type: 'Power Plant · New Build', owner: 'Fermi America', location: 'Carson County, TX', state: 'TX', stage: 'Announced', capacity: '11,679.3 MW (157 units)', capacityValue: 11679.3, milestone: 'Dec 2027', industryRaw: 'Power Generation', industryDisplay: 'Power Generation', pastDue: false, needsReview: false },
-  { id: '2', name: 'Intermountain Pumped Storage Project', type: 'Power Plant · New Build', owner: 'Premium Energy Holdings', location: 'Millard County, UT', state: 'UT', stage: 'Announced', capacity: '1,000.0 MW (4 units)', capacityValue: 1000, milestone: 'Jul 2028', industryRaw: 'Power Generation', industryDisplay: 'Power Generation', pastDue: false, needsReview: false },
-  { id: '3', name: 'Glass Mountain Wind 1', type: 'Power Plant · New Build', owner: 'Not published', location: 'Reeves County, Texas', state: 'TX', stage: 'Permitting/Planning', capacity: '511.5 MW', capacityValue: 511.5, milestone: '—', industryRaw: 'Power Generation', industryDisplay: 'Power Generation', pastDue: false, needsReview: false },
-  { id: '4', name: 'Athens Solar I (Hybrid)', type: 'Power Plant · New Build', owner: 'Vesper Energy Development LLC', location: 'Placer County, CA', state: 'CA', stage: 'Announced', capacity: '500.0 MW (2 units)', capacityValue: 500, milestone: 'Jun 2028', industryRaw: 'Power Generation', industryDisplay: 'Power Generation', pastDue: false, needsReview: false },
-  { id: '5', name: 'Daggett Solar 3', type: 'Power Plant · New Build', owner: 'Not published', location: 'San Bernardino County, CA', state: 'CA', stage: 'Permitting/Planning', capacity: '300.0 MW', capacityValue: 300, milestone: 'Aug 2023', industryRaw: 'Power Generation', industryDisplay: 'Power Generation', pastDue: true, needsReview: false },
-  { id: '6', name: '245 MW Solar — Ameren Transmission Company Of Illinois, Scott County, IL (MISO J4031)', type: 'Power Plant · New Build', owner: 'Not published', location: 'Scott County, IL', state: 'IL', stage: 'Permitting/Planning', capacity: '245.0 MW', capacityValue: 245, milestone: '—', industryRaw: 'Power Generation', industryDisplay: 'Power Generation', pastDue: false, needsReview: false },
-  { id: '7', name: 'Desert Jewel Storage', type: 'Power Plant · New Build', owner: 'Not published', location: 'San Diego County, CA', state: 'CA', stage: 'Permitting/Planning', capacity: '200.0 MW', capacityValue: 200, milestone: 'Aug 2029', industryRaw: 'Power Generation', industryDisplay: 'Power Generation', pastDue: false, needsReview: false },
-  { id: '8', name: 'Myers Solar and Storage', type: 'Power Plant · New Build', owner: 'Belltown Power Texas 2, LLC', location: 'Goliad County, TX', state: 'TX', stage: 'Permitting/Planning', capacity: '176.6 MW (2 units)', capacityValue: 176.6, milestone: 'Aug 2028', industryRaw: 'Power Generation', industryDisplay: 'Power Generation', pastDue: false, needsReview: false },
-  { id: '9', name: 'Montezuma II', type: 'Power Plant · New Build', owner: 'Not published', location: 'Solano County, CA', state: 'CA', stage: 'Permitting/Planning', capacity: '78.0 MW', capacityValue: 78, milestone: 'Jan 2012', industryRaw: 'Power Generation', industryDisplay: 'Power Generation', pastDue: true, needsReview: false },
-  { id: '10', name: 'Frostburg 138 kV', type: 'Power Plant · New Build', owner: 'Not published', location: 'Allegany County, MD', state: 'MD', stage: 'Permitting/Planning', capacity: '80.0 MW', capacityValue: 80, milestone: 'Dec 2021', industryRaw: 'Power Generation', industryDisplay: 'Power Generation', pastDue: true, needsReview: false },
-  { id: '11', name: 'SeaOne Corpus Christi, LLC', type: 'LNG Export Terminal', owner: 'SeaOne Corpus Christi, LLC', location: 'United States', state: '', stage: 'Approved', capacity: '1.50 Bcf/d', capacityValue: 0, milestone: '—', industryRaw: 'Oil & Gas', industryDisplay: 'Oil & Gas', pastDue: false, needsReview: false },
-  { id: '12', name: 'Terafab chip plant', type: 'Chip Manufacturing', owner: 'Tesla and SpaceX', location: 'Texas', state: 'TX', stage: 'Announced', capacity: '$16.8 bn', capacityValue: 0, milestone: '—', industryRaw: 'Hi Tech', industryDisplay: 'Hi Tech', pastDue: false, needsReview: false },
-  { id: '13', name: 'Amazon Gilroy Data Center', type: 'Data Center', owner: 'Amazon', location: 'Gilroy, California', state: 'CA', stage: 'Under Construction', capacity: '—', capacityValue: 0, milestone: '—', industryRaw: 'Hi Tech', industryDisplay: 'Hi Tech', pastDue: false, needsReview: false },
-]
-
 export default function ProjectsList() {
-  const [projects, setProjects] = useState<ProjectRow[]>(initialProjects)
+  const [projects, setProjects] = useState<ProjectRow[]>([])
+  const [companies, setCompanies] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
-  const [filters, setFilters] = useState({ ind: 'all', mw: 'all', stage: 'all', state: 'all', past: false, review: false })
+  const [filters, setFilters] = useState({ ind: 'all', type: 'all', capacity: 'all', stage: 'all', state: 'all', past: false, review: false })
   const [sort, setSort] = useState({ key: 'name', dir: 1 })
+  const [perPage, setPerPage] = useState('100')
+
+  // Fetch companies for owner lookup
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        const res = await fetch('/api/companies')
+        const data = await res.json()
+        const lookup: Record<string, string> = {}
+        data.data?.forEach((company: any) => {
+          lookup[company.id] = company.name
+        })
+        setCompanies(lookup)
+      } catch (error) {
+        console.error('Failed to fetch companies:', error)
+      }
+    }
+
+    fetchCompanies()
+  }, [])
 
   // Fetch projects from API
   useEffect(() => {
@@ -38,16 +45,26 @@ export default function ProjectsList() {
         setLoading(true)
         const params = new URLSearchParams()
         if (filters.ind !== 'all') params.append('industry', filters.ind)
+        if (filters.type !== 'all') params.append('type', filters.type)
         if (filters.stage !== 'all') params.append('stage', filters.stage)
         if (filters.state !== 'all') params.append('state', filters.state)
+        if (filters.capacity !== 'all') params.append('capacity', filters.capacity)
+        if (filters.past) params.append('past_due', 'true')
+        if (filters.review) params.append('needs_review', 'true')
         if (search) params.append('search', search)
 
-        const res = await fetch(`/api/projects?${params.toString()}`)
-        const data = await res.json()
-        setProjects(data.data || initialProjects)
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+        try {
+          const res = await fetch(`/api/projects?${params.toString()}`, { signal: controller.signal })
+          const data = await res.json()
+          setProjects(data.data || [])
+        } finally {
+          clearTimeout(timeoutId)
+        }
       } catch (error) {
         console.error('Failed to fetch projects:', error)
-        setProjects(initialProjects)
+        setProjects([])
       } finally {
         setLoading(false)
       }
@@ -55,6 +72,40 @@ export default function ProjectsList() {
 
     fetchProjects()
   }, [filters, search])
+
+  // Extract unique project types grouped by industry
+  const projectTypesByIndustry = useMemo(() => {
+    const types: Record<string, Set<string>> = {}
+    projects.forEach(p => {
+      if (p.industryRaw && typeof p.industryRaw === 'string') {
+        const parts = p.industryRaw.split(' - ')
+        if (parts.length === 2) {
+          const [industry, type] = parts
+          if (!types[industry]) types[industry] = new Set()
+          types[industry].add(type)
+        }
+      }
+    })
+    return Object.entries(types).reduce((acc, [ind, typeSet]) => {
+      acc[ind] = Array.from(typeSet).sort()
+      return acc
+    }, {} as Record<string, string[]>)
+  }, [projects])
+
+  // Get available types for selected industry (from config if no data yet, or from projects)
+  const availableTypes = useMemo(() => {
+    if (filters.ind === 'all') return []
+    const configTypes = industriesConfig[filters.ind as keyof typeof industriesConfig]?.types || []
+    const dataTypes = projectTypesByIndustry[filters.ind] || []
+    // Use data types if we have them, otherwise use config
+    return dataTypes.length > 0 ? dataTypes : configTypes
+  }, [filters.ind, projectTypesByIndustry])
+
+  // Get industry display name
+  const getIndustryDisplayName = (industryKey: string) => {
+    if (industryKey === 'all') return 'All'
+    return industryKey
+  }
 
   const inBand = (value: number, band: string) => {
     if (band === 'all') return true
@@ -66,14 +117,15 @@ export default function ProjectsList() {
   const filtered = useMemo(() => {
     return projects.filter(p => {
       const matchSearch = search === '' || p.name.toLowerCase().includes(search.toLowerCase()) ||
-                         (p.owner?.name || '').toLowerCase().includes(search.toLowerCase()) ||
+                         (typeof p.owner === 'string' ? p.owner : p.owner?.name || '').toLowerCase().includes(search.toLowerCase()) ||
                          p.location.toLowerCase().includes(search.toLowerCase())
-      const matchMw = inBand(p.capacity_mw || 0, filters.mw)
+      const matchCapacity = inBand(p.capacity_mw || 0, filters.capacity)
       const matchStage = filters.stage === 'all' || p.stage === filters.stage
       const matchState = filters.state === 'all' || p.state === filters.state
       const matchPast = !filters.past || p.past_due
       const matchReview = !filters.review || p.needs_review
-      return matchSearch && matchMw && matchStage && matchState && matchPast && matchReview
+      const matchType = filters.type === 'all' || (p.industryRaw && p.industryRaw.includes(` - ${filters.type}`))
+      return matchSearch && matchCapacity && matchStage && matchState && matchPast && matchReview && matchType
     })
   }, [projects, search, filters])
 
@@ -100,6 +152,31 @@ export default function ProjectsList() {
     return copy
   }, [filtered, sort])
 
+  const displayLimit = perPage === 'all' ? sorted.length : parseInt(perPage)
+  const paginated = sorted.slice(0, displayLimit)
+
+  const getOwnerDisplay = (owner: any) => {
+    if (Array.isArray(owner)) {
+      // Array of linked record IDs - look up company names
+      if (owner.length > 0) {
+        const names = owner.map(id => {
+          const name = companies[id]
+          return name || id
+        })
+        return names.join(', ')
+      }
+      return '—'
+    }
+    if (typeof owner === 'object' && owner?.name) {
+      return owner.name
+    }
+    if (typeof owner === 'string') {
+      // Single ID - look up company name
+      return (companies[owner] || owner) || '—'
+    }
+    return '—'
+  }
+
   return (
     <main style={{ maxWidth: '96rem', margin: '0 auto', padding: '1.4rem clamp(1rem, 3vw, 2rem) 5rem', display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.4rem 1.5rem' }}>
@@ -107,7 +184,7 @@ export default function ProjectsList() {
           Projects
         </h1>
         <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.7rem', color: '#5A5D78' }}>
-          {filtered.length} active · last run 19 Aug 2026
+          {filtered.length} active · last run 22 Aug 2026
         </span>
       </div>
 
@@ -123,46 +200,110 @@ export default function ProjectsList() {
           />
         </div>
 
-        {/* Industry Filter */}
+        {/* Industry Filter - Dynamic from config */}
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem' }}>
           <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', letterSpacing: '0.13em', textTransform: 'uppercase', color: '#5A5D78', width: '4.6rem', flexShrink: 0 }}>Industry</span>
-          {[{ label: 'All', val: 'all', count: '4,081' }, { label: 'Power Generation', val: 'Power Generation', count: '1,842' }, { label: 'Power Delivery', val: 'Power Delivery', count: '654' }, { label: 'Oil & Gas', val: 'Oil & Gas', count: '892' }, { label: 'Hi Tech', val: 'Hi Tech', count: '425' }, { label: 'Life Sciences', val: 'Life Sciences', count: '168' }].map(({ label, val, count }) => (
+          <button
+            onClick={() => setFilters({ ...filters, ind: 'all', type: 'all' })}
+            style={{
+              fontFamily: 'inherit', fontSize: '0.8rem', cursor: 'pointer',
+              background: filters.ind === 'all' ? '#376BE9' : '#E9EBF5',
+              color: filters.ind === 'all' ? '#FFFFFF' : '#1C0140',
+              border: '1px solid transparent', borderRadius: '999px', padding: '0.24rem 0.7rem',
+              display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+            }}
+            onMouseEnter={(e) => { if (filters.ind !== 'all') e.currentTarget.style.borderColor = '#376BE9' }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent' }}
+          >
+            All
+          </button>
+          {Object.keys(industriesConfig).map((ind) => (
             <button
-              key={val}
-              onClick={() => setFilters({ ...filters, ind: val })}
+              key={ind}
+              onClick={() => setFilters({ ...filters, ind, type: 'all' })}
               style={{
                 fontFamily: 'inherit', fontSize: '0.8rem', cursor: 'pointer',
-                background: filters.ind === val ? '#376BE9' : '#E9EBF5',
-                color: filters.ind === val ? '#FFFFFF' : '#1C0140',
+                background: filters.ind === ind ? '#376BE9' : '#E9EBF5',
+                color: filters.ind === ind ? '#FFFFFF' : '#1C0140',
                 border: '1px solid transparent', borderRadius: '999px', padding: '0.24rem 0.7rem',
                 display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
               }}
-              onMouseEnter={(e) => { if (filters.ind !== val) e.currentTarget.style.borderColor = '#376BE9' }}
+              onMouseEnter={(e) => { if (filters.ind !== ind) e.currentTarget.style.borderColor = '#376BE9' }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent' }}
             >
-              {label} <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.66rem', color: filters.ind === val ? 'rgba(255,255,255,.75)' : '#5A5D78' }}>{count}</span>
+              {ind}
             </button>
           ))}
         </div>
 
-        {/* Capacity Filter */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem' }}>
-          <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', letterSpacing: '0.13em', textTransform: 'uppercase', color: '#5A5D78', width: '4.6rem', flexShrink: 0 }}>Capacity</span>
-          {[{ label: 'Any', val: 'all', count: '3,723' }, { label: 'Under 100 MW', val: '0-100', count: '456' }, { label: '100–250 MW', val: '100-250', count: '623' }, { label: '250–500 MW', val: '250-500', count: '734' }, { label: '500 MW–1 GW', val: '500-1000', count: '892' }, { label: '1 GW+', val: '1000-', count: '358' }].map(({ label, val, count }) => (
+        {/* Project Type Filter */}
+        {availableTypes.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem' }}>
+            <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', letterSpacing: '0.13em', textTransform: 'uppercase', color: '#5A5D78', width: '4.6rem', flexShrink: 0 }}>Type</span>
             <button
-              key={val}
-              onClick={() => setFilters({ ...filters, mw: val })}
+              onClick={() => setFilters({ ...filters, type: 'all' })}
               style={{
                 fontFamily: 'inherit', fontSize: '0.8rem', cursor: 'pointer',
-                background: filters.mw === val ? '#376BE9' : '#E9EBF5',
-                color: filters.mw === val ? '#FFFFFF' : '#1C0140',
+                background: filters.type === 'all' ? '#376BE9' : '#E9EBF5',
+                color: filters.type === 'all' ? '#FFFFFF' : '#1C0140',
                 border: '1px solid transparent', borderRadius: '999px', padding: '0.24rem 0.7rem',
                 display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
               }}
-              onMouseEnter={(e) => { if (filters.mw !== val) e.currentTarget.style.borderColor = '#376BE9' }}
+              onMouseEnter={(e) => { if (filters.type !== 'all') e.currentTarget.style.borderColor = '#376BE9' }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent' }}
             >
-              {label} <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.66rem', color: filters.mw === val ? 'rgba(255,255,255,.75)' : '#5A5D78' }}>{count}</span>
+              Any
+            </button>
+            {availableTypes.map((type) => (
+              <button
+                key={type}
+                onClick={() => setFilters({ ...filters, type })}
+                style={{
+                  fontFamily: 'inherit', fontSize: '0.8rem', cursor: 'pointer',
+                  background: filters.type === type ? '#376BE9' : '#E9EBF5',
+                  color: filters.type === type ? '#FFFFFF' : '#1C0140',
+                  border: '1px solid transparent', borderRadius: '999px', padding: '0.24rem 0.7rem',
+                  display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                }}
+                onMouseEnter={(e) => { if (filters.type !== type) e.currentTarget.style.borderColor = '#376BE9' }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent' }}
+              >
+                {type}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Capacity Filter */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem' }}>
+          <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', letterSpacing: '0.13em', textTransform: 'uppercase', color: '#5A5D78', width: '4.6rem', flexShrink: 0 }}>Capacity</span>
+          <button
+            onClick={() => setFilters({ ...filters, capacity: 'all' })}
+            style={{
+              fontFamily: 'inherit', fontSize: '0.8rem', cursor: 'pointer',
+              background: filters.capacity === 'all' ? '#376BE9' : '#E9EBF5',
+              color: filters.capacity === 'all' ? '#FFFFFF' : '#1C0140',
+              border: '1px solid transparent', borderRadius: '999px', padding: '0.24rem 0.7rem',
+            }}
+            onMouseEnter={(e) => { if (filters.capacity !== 'all') e.currentTarget.style.borderColor = '#376BE9' }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent' }}
+          >
+            Any
+          </button>
+          {capacityBands.map(({ label, value }) => (
+            <button
+              key={value}
+              onClick={() => setFilters({ ...filters, capacity: value })}
+              style={{
+                fontFamily: 'inherit', fontSize: '0.8rem', cursor: 'pointer',
+                background: filters.capacity === value ? '#376BE9' : '#E9EBF5',
+                color: filters.capacity === value ? '#FFFFFF' : '#1C0140',
+                border: '1px solid transparent', borderRadius: '999px', padding: '0.24rem 0.7rem',
+              }}
+              onMouseEnter={(e) => { if (filters.capacity !== value) e.currentTarget.style.borderColor = '#376BE9' }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent' }}
+            >
+              {label}
             </button>
           ))}
         </div>
@@ -170,21 +311,33 @@ export default function ProjectsList() {
         {/* Stage Filter */}
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem' }}>
           <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', letterSpacing: '0.13em', textTransform: 'uppercase', color: '#5A5D78', width: '4.6rem', flexShrink: 0 }}>Stage</span>
-          {[{ label: 'Any', val: 'all', count: '4,081' }, { label: 'Permitting', val: 'Permitting/Planning', count: '2,145' }, { label: 'Announced', val: 'Announced', count: '1,234' }, { label: 'Under Construction', val: 'Under Construction', count: '542' }, { label: 'Approved', val: 'Approved', count: '160' }].map(({ label, val, count }) => (
+          <button
+            onClick={() => setFilters({ ...filters, stage: 'all' })}
+            style={{
+              fontFamily: 'inherit', fontSize: '0.8rem', cursor: 'pointer',
+              background: filters.stage === 'all' ? '#376BE9' : '#E9EBF5',
+              color: filters.stage === 'all' ? '#FFFFFF' : '#1C0140',
+              border: '1px solid transparent', borderRadius: '999px', padding: '0.24rem 0.7rem',
+            }}
+            onMouseEnter={(e) => { if (filters.stage !== 'all') e.currentTarget.style.borderColor = '#376BE9' }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent' }}
+          >
+            Any
+          </button>
+          {['Permitting/Planning', 'Announced', 'Under Construction', 'Approved'].map((stage) => (
             <button
-              key={val}
-              onClick={() => setFilters({ ...filters, stage: val })}
+              key={stage}
+              onClick={() => setFilters({ ...filters, stage })}
               style={{
                 fontFamily: 'inherit', fontSize: '0.8rem', cursor: 'pointer',
-                background: filters.stage === val ? '#376BE9' : '#E9EBF5',
-                color: filters.stage === val ? '#FFFFFF' : '#1C0140',
+                background: filters.stage === stage ? '#376BE9' : '#E9EBF5',
+                color: filters.stage === stage ? '#FFFFFF' : '#1C0140',
                 border: '1px solid transparent', borderRadius: '999px', padding: '0.24rem 0.7rem',
-                display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
               }}
-              onMouseEnter={(e) => { if (filters.stage !== val) e.currentTarget.style.borderColor = '#376BE9' }}
+              onMouseEnter={(e) => { if (filters.stage !== stage) e.currentTarget.style.borderColor = '#376BE9' }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent' }}
             >
-              {label} <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.66rem', color: filters.stage === val ? 'rgba(255,255,255,.75)' : '#5A5D78' }}>{count}</span>
+              {stage}
             </button>
           ))}
         </div>
@@ -204,12 +357,12 @@ export default function ProjectsList() {
             onMouseEnter={(e) => { if (filters.state === 'all') e.currentTarget.style.borderColor = '#376BE9' }}
             onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#D6D9E8' }}
           >
-            <option value="all">Any state — 4,081</option>
-            <option value="TX">Texas — 1,524</option>
-            <option value="CA">California — 826</option>
-            <option value="IL">Illinois — 342</option>
-            <option value="NY">New York — 287</option>
-            <option value="OH">Ohio — 256</option>
+            <option value="all">Any state</option>
+            <option value="TX">Texas</option>
+            <option value="CA">California</option>
+            <option value="IL">Illinois</option>
+            <option value="NY">New York</option>
+            <option value="OH">Ohio</option>
           </select>
           <span style={{ fontSize: '0.74rem', color: '#5A5D78' }}>50 states available</span>
         </div>
@@ -229,7 +382,7 @@ export default function ProjectsList() {
             onMouseEnter={(e) => { if (!filters.past) e.currentTarget.style.borderColor = '#376BE9' }}
             onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent' }}
           >
-            Past due only <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.66rem', color: filters.past ? 'rgba(250,242,220,.75)' : '#5A5D78' }}>134</span>
+            Past due only
           </button>
           <button
             onClick={() => setFilters({ ...filters, review: !filters.review })}
@@ -243,28 +396,41 @@ export default function ProjectsList() {
             onMouseEnter={(e) => { if (!filters.review) e.currentTarget.style.borderColor = '#376BE9' }}
             onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent' }}
           >
-            Needs review <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.66rem', color: filters.review ? 'rgba(255,255,255,.75)' : '#5A5D78' }}>169</span>
+            Needs review
           </button>
         </div>
       </div>
 
       {/* Result Bar */}
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.4rem 1rem', fontSize: '0.85rem', color: '#5A5D78' }}>
-        <span>{loading ? 'Loading...' : `Showing ${sorted.length} of ${projects.length} projects`}</span>
-        <button onClick={() => setFilters({ ind: 'all', mw: 'all', stage: 'all', state: 'all', past: false, review: false })} style={{ fontFamily: 'inherit', fontSize: '0.82rem', background: 'none', border: 'none', cursor: 'pointer', color: '#376BE9', fontWeight: 600, padding: 0, marginLeft: 'auto' }}>
+        <span>{loading ? 'Loading...' : `Showing ${paginated.length} of ${sorted.length} filtered (${projects.length} total)`}</span>
+        <select
+          value={perPage}
+          onChange={(e) => setPerPage(e.target.value)}
+          style={{ fontFamily: 'inherit', fontSize: '0.82rem', color: '#1C0140', background: '#F4F5FA', border: '1px solid #D6D9E8', borderRadius: '3px', padding: '0.32rem 0.5rem', cursor: 'pointer' }}
+        >
+          <option value="10">10 per page</option>
+          <option value="100">100 per page</option>
+          <option value="500">500 per page</option>
+          <option value="all">All</option>
+        </select>
+        <button onClick={() => setFilters({ ind: 'all', type: 'all', capacity: 'all', stage: 'all', state: 'all', past: false, review: false })} style={{ fontFamily: 'inherit', fontSize: '0.82rem', background: 'none', border: 'none', cursor: 'pointer', color: '#376BE9', fontWeight: 600, padding: 0, marginLeft: 'auto' }}>
           Clear filters
         </button>
       </div>
 
       {/* Table */}
-      <div style={{ background: '#FFFFFF', border: '1px solid #D6D9E8', borderRadius: '4px', boxShadow: '0 1px 2px rgba(28,1,64,.06)', overflowX: 'auto' }}>
-        <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: '58rem' }}>
+      <div style={{ background: '#FFFFFF', border: '1px solid #D6D9E8', borderRadius: '4px', boxShadow: '0 1px 2px rgba(28,1,64,.06)', overflowX: 'auto', overflowY: 'auto', maxHeight: '800px' }}>
+        <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: '66rem' }}>
           <thead>
             <tr>
               <th onClick={() => setSort({ key: 'name', dir: sort.key === 'name' ? -sort.dir : 1 })} style={{ position: 'sticky', top: 0, zIndex: 1, background: '#E9EBF5', fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#5A5D78', textAlign: 'left', padding: '0.6rem 0.8rem', borderBottom: '1px solid #D6D9E8', whiteSpace: 'nowrap', cursor: 'pointer' }}>
                 Project <span style={{ opacity: sort.key === 'name' ? 1 : 0.45 }}>{sort.key === 'name' && (sort.dir === 1 ? '↑' : '↓') || '↕'}</span>
               </th>
               <th style={{ position: 'sticky', top: 0, zIndex: 1, background: '#E9EBF5', fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#5A5D78', textAlign: 'left', padding: '0.6rem 0.8rem', borderBottom: '1px solid #D6D9E8' }}>Owner</th>
+              <th style={{ position: 'sticky', top: 0, zIndex: 1, background: '#E9EBF5', fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#5A5D78', textAlign: 'left', padding: '0.6rem 0.8rem', borderBottom: '1px solid #D6D9E8' }}>EPC</th>
+              <th style={{ position: 'sticky', top: 0, zIndex: 1, background: '#E9EBF5', fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#5A5D78', textAlign: 'left', padding: '0.6rem 0.8rem', borderBottom: '1px solid #D6D9E8' }}>OEM</th>
+              <th style={{ position: 'sticky', top: 0, zIndex: 1, background: '#E9EBF5', fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#5A5D78', textAlign: 'left', padding: '0.6rem 0.8rem', borderBottom: '1px solid #D6D9E8' }}>Awards</th>
               <th style={{ position: 'sticky', top: 0, zIndex: 1, background: '#E9EBF5', fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#5A5D78', textAlign: 'left', padding: '0.6rem 0.8rem', borderBottom: '1px solid #D6D9E8' }}>Location</th>
               <th onClick={() => setSort({ key: 'stage', dir: sort.key === 'stage' ? -sort.dir : 1 })} style={{ position: 'sticky', top: 0, zIndex: 1, background: '#E9EBF5', fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#5A5D78', textAlign: 'left', padding: '0.6rem 0.8rem', borderBottom: '1px solid #D6D9E8', cursor: 'pointer' }}>
                 Stage <span style={{ opacity: sort.key === 'stage' ? 1 : 0.45 }}>{sort.key === 'stage' && (sort.dir === 1 ? '↑' : '↓') || '↕'}</span>
@@ -272,20 +438,37 @@ export default function ProjectsList() {
               <th onClick={() => setSort({ key: 'capacity_mw', dir: sort.key === 'capacity_mw' ? -sort.dir : 1 })} style={{ position: 'sticky', top: 0, zIndex: 1, background: '#E9EBF5', fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#5A5D78', textAlign: 'left', padding: '0.6rem 0.8rem', borderBottom: '1px solid #D6D9E8', cursor: 'pointer' }}>
                 Capacity <span style={{ opacity: sort.key === 'capacity_mw' ? 1 : 0.45 }}>{sort.key === 'capacity_mw' && (sort.dir === 1 ? '↑' : '↓') || '↕'}</span>
               </th>
-              <th onClick={() => setSort({ key: 'milestone_date', dir: sort.key === 'milestone_date' ? -sort.dir : 1 })} style={{ position: 'sticky', top: 0, zIndex: 1, background: '#E9EBF5', fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#5A5D78', textAlign: 'left', padding: '0.6rem 0.8rem', borderBottom: '1px solid #D6D9E8', cursor: 'pointer' }}>
-                Milestone <span style={{ opacity: sort.key === 'milestone_date' ? 1 : 0.45 }}>{sort.key === 'milestone_date' && (sort.dir === 1 ? '↑' : '↓') || '↕'}</span>
+              <th style={{ position: 'sticky', top: 0, zIndex: 1, background: '#E9EBF5', fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#5A5D78', textAlign: 'left', padding: '0.6rem 0.8rem', borderBottom: '1px solid #D6D9E8' }}>
+                Milestone
               </th>
             </tr>
           </thead>
           <tbody>
-            {sorted.map((p) => (
+            {paginated.map((p) => (
               <tr key={p.id} style={{ borderBottom: '1px solid #D6D9E8', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.background = '#F7F9FE'} onMouseLeave={(e) => e.currentTarget.style.background = '#FFFFFF'}>
                 <td style={{ padding: '0.6rem 0.8rem', verticalAlign: 'top', fontSize: '0.88rem' }}>
-                  <a href="#" style={{ fontWeight: 600, color: '#376BE9', display: 'block', lineHeight: 1.3, textDecoration: 'none' }}>{p.name}</a>
+                  <a href={`/projects/${p.id}`} style={{ fontWeight: 600, color: '#376BE9', display: 'block', lineHeight: 1.3, textDecoration: 'none' }}>{p.name}</a>
                   <span style={{ fontSize: '0.74rem', color: '#5A5D78', display: 'block', marginTop: '0.1rem' }}>{p.type}</span>
+                  {p.source_url && (
+                    <a href={p.source_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.7rem', color: '#376BE9', textDecoration: 'none', marginTop: '0.2rem', display: 'block' }} onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'} onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}>
+                      View source →
+                    </a>
+                  )}
                 </td>
-                <td style={{ padding: '0.6rem 0.8rem' }}>{p.owner?.name || '—'}</td>
-                <td style={{ padding: '0.6rem 0.8rem' }}>{p.location}</td>
+                <td style={{ padding: '0.6rem 0.8rem', fontSize: '0.85rem' }}>{getOwnerDisplay(p.owner)}</td>
+                <td style={{ padding: '0.6rem 0.8rem', fontSize: '0.85rem' }}>{getOwnerDisplay(p.epc)}</td>
+                <td style={{ padding: '0.6rem 0.8rem', fontSize: '0.85rem' }}>{getOwnerDisplay(p.oem)}</td>
+                <td style={{ padding: '0.6rem 0.8rem', fontSize: '0.85rem' }}>
+                  {(p.epc_award || p.oem_award) ? (
+                    <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'center' }}>
+                      {p.epc_award && <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.7rem', background: '#E4EBFC', color: '#376BE9', padding: '0.2rem 0.4rem', borderRadius: '2px', fontWeight: 600 }}>EPC</span>}
+                      {p.oem_award && <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.7rem', background: '#FCE4E4', color: '#C24040', padding: '0.2rem 0.4rem', borderRadius: '2px', fontWeight: 600 }}>OEM</span>}
+                    </div>
+                  ) : (
+                    <span style={{ color: '#5A5D78' }}>—</span>
+                  )}
+                </td>
+                <td style={{ padding: '0.6rem 0.8rem', fontSize: '0.85rem' }}>{p.location}</td>
                 <td style={{ padding: '0.6rem 0.8rem' }}>
                   <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.62rem', letterSpacing: '0.05em', padding: '0.16rem 0.42rem', borderRadius: '2px', background: p.stage === 'Under Construction' ? '#E4EBFC' : '#E9EBF5', color: p.stage === 'Under Construction' ? '#376BE9' : '#5A5D78', whiteSpace: 'nowrap' }}>
                     {p.stage}
@@ -300,17 +483,17 @@ export default function ProjectsList() {
             ))}
           </tbody>
         </table>
-        {sorted.length === 0 && (
+        {paginated.length === 0 && (
           <div style={{ padding: '2.5rem 1.25rem', textAlign: 'center', color: '#5A5D78', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-            <strong style={{ color: '#1C0140', fontFamily: 'Chivo,sans-serif', fontSize: '1.05rem' }}>No projects match those filters</strong>
-            <span>Try widening the capacity band or clearing the state.</span>
+            <strong style={{ color: '#1C0140', fontFamily: 'Chivo,sans-serif', fontSize: '1.05rem' }}>{sorted.length === 0 ? 'No projects match those filters' : 'Loading...'}</strong>
+            <span>{sorted.length === 0 ? 'Try widening the capacity band or clearing the state.' : ''}</span>
           </div>
         )}
       </div>
 
       {/* Footnote */}
       <div style={{ fontSize: '0.83rem', color: '#5A5D78', background: '#E9EBF5', borderLeft: '2px solid #376BE9', padding: '0.7rem 0.95rem', borderRadius: '0 3px 3px 0' }}>
-        <strong style={{ color: '#1C0140', fontWeight: 600 }}>Capacity sorts on parsed megawatts.</strong> Rows measured in Bcf/d or dollars, and the 358 with no stated size, sort last rather than counting as zero — an unknown size is not a small one. State filters work off a normalised code, so "Texas" and "TX" count as one place.
+        <strong style={{ color: '#1C0140', fontWeight: 600 }}>Capacity sorts on parsed megawatts.</strong> Rows measured in Bcf/d or dollars, and projects with no stated size, sort last rather than counting as zero — an unknown size is not a small one. State filters work off a normalised code, so "Texas" and "TX" count as one place.
       </div>
     </main>
   )

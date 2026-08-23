@@ -7,9 +7,12 @@ export async function GET(request: Request) {
 
     const filters: ProjectFilters = {
       industry: searchParams.get('industry') || undefined,
+      type: searchParams.get('type') || undefined,
       stage: searchParams.get('stage') || undefined,
       state: searchParams.get('state') || undefined,
+      capacity: searchParams.get('capacity') || undefined,
       past_due: searchParams.get('past_due') === 'true' || undefined,
+      needs_review: searchParams.get('needs_review') === 'true' || undefined,
       search: searchParams.get('search') || undefined,
     }
 

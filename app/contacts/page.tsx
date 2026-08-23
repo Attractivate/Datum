@@ -127,28 +127,53 @@ const mockContacts: Contact[] = [
   },
 ]
 
+interface ContactWithCompany extends Contact {
+  company_name?: string
+  company_industry?: string
+}
+
 export default function ContactsPage() {
-  const [contacts, setContacts] = useState<Contact[]>(mockContacts)
+  const [contacts, setContacts] = useState<ContactWithCompany[]>(mockContacts)
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
   const [role, setRole] = useState('All roles')
   const [industry, setIndustry] = useState('All industries')
   const [size, setSize] = useState('All sizes')
   const [perPage, setPerPage] = useState('50')
+  const [companies, setCompanies] = useState<Record<string, any>>({})
 
-  // Fetch contacts from API
+  // Fetch contacts and companies from API
   useEffect(() => {
-    const fetchContacts = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true)
+
+        // Fetch companies first for lookup
+        const companiesRes = await fetch('/api/companies')
+        const companiesData = await companiesRes.json()
+        const companyLookup: Record<string, any> = {}
+        companiesData.data?.forEach((company: any) => {
+          companyLookup[company.id] = company
+        })
+        setCompanies(companyLookup)
+
+        // Fetch contacts
         const params = new URLSearchParams()
         if (industry !== 'All industries') params.append('industry', industry)
         if (search) params.append('search', search)
-        params.append('limit', '50')
+        params.append('limit', '100')
 
         const res = await fetch(`/api/contacts?${params.toString()}`)
         const data = await res.json()
-        setContacts(data.data || mockContacts)
+
+        // Enrich contacts with company info
+        const enrichedContacts = (data.data || mockContacts).map((contact: any) => ({
+          ...contact,
+          company_name: contact.company_id ? companyLookup[contact.company_id]?.name : contact.company,
+          company_industry: contact.company_id ? companyLookup[contact.company_id]?.industry : contact.industry
+        }))
+
+        setContacts(enrichedContacts)
       } catch (error) {
         console.error('Failed to fetch contacts:', error)
         setContacts(mockContacts)
@@ -157,7 +182,7 @@ export default function ContactsPage() {
       }
     }
 
-    fetchContacts()
+    fetchData()
   }, [industry, search])
 
   return (
@@ -251,12 +276,11 @@ export default function ContactsPage() {
                   <div style={{ fontSize: '0.8rem', color: '#666' }}>{contact.titleLevel}</div>
                 </td>
                 <td style={{ padding: '0.8rem', fontSize: '0.9rem' }}>
-                  <div style={{ fontWeight: 600, color: '#376BE9' }}>{contact.company}</div>
-                  <div style={{ fontSize: '0.85rem', color: '#666' }}>{contact.location}</div>
+                  <div style={{ fontWeight: 600, color: '#376BE9' }}>{(contact as ContactWithCompany).company_name || contact.company || '—'}</div>
                 </td>
                 <td style={{ padding: '0.8rem', fontSize: '0.9rem' }}>
                   <span style={{ background: '#f0f0f0', color: '#666', padding: '0.25rem 0.5rem', borderRadius: '2px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                    {contact.industry}
+                    {(contact as ContactWithCompany).company_industry || contact.industry || '—'}
                   </span>
                 </td>
                 <td style={{ padding: '0.8rem', fontSize: '0.9rem' }}>

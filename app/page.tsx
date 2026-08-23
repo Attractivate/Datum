@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
+import type { Project, Company } from '@/lib/types'
 
 interface Event {
   id: string
@@ -12,223 +13,17 @@ interface Event {
   type: string
   title: string
   project: string
+  project_id?: string
   company: string
+  company_id?: string
   location: string
   source: string
+  source_url?: string
   mergedSources?: number
 }
 
-const mockEvents: Event[] = [
-  {
-    id: '1',
-    day: 'Wednesday 19 August',
-    date: 'wed19',
-    industry: 'Hi Tech',
-    significant: false,
-    type: 'News Mention',
-    title: 'Google reveals it is behind 506-acre Project Clydesdale data center in Oklahoma',
-    project: 'Project Clydesdale',
-    company: 'Google',
-    location: 'Tulsa County, Oklahoma',
-    source: 'News pipeline',
-  },
-  {
-    id: '2',
-    day: 'Wednesday 19 August',
-    date: 'wed19',
-    industry: 'Hi Tech',
-    significant: false,
-    type: 'News Mention',
-    title: 'NVIDIA partners with SB Energy on 10-GW AI "factory" in Ohio',
-    project: 'Piketon AI Factory',
-    company: 'NVIDIA and SB Energy',
-    location: 'Piketon, Ohio',
-    source: 'News pipeline',
-  },
-  {
-    id: '3',
-    day: 'Wednesday 19 August',
-    date: 'wed19',
-    industry: 'Life Sciences',
-    significant: false,
-    type: 'News Mention',
-    title: 'Genentech marks topping-out milestone for new Holly Springs manufacturing facility',
-    project: 'Holly Springs Fill-Finish',
-    company: 'Genentech',
-    location: 'Holly Springs, North Carolina',
-    source: 'News pipeline',
-  },
-  {
-    id: '4',
-    day: 'Wednesday 19 August',
-    date: 'wed19',
-    industry: 'Power Delivery',
-    significant: false,
-    type: 'News Mention',
-    title: 'Georgia Transmission builds new 230-kV station amid rising demand',
-    project: 'Georgia 230-kV Station',
-    company: 'Georgia Transmission',
-    location: 'Georgia',
-    source: 'News pipeline',
-  },
-  {
-    id: '5',
-    day: 'Wednesday 19 August',
-    date: 'wed19',
-    industry: 'Water Infrastructure',
-    significant: false,
-    type: 'News Mention',
-    title: 'Town of Lady Lake receives $1 million from state for water reclamation facility',
-    project: 'Lady Lake Water Reclamation',
-    company: 'Town of Lady Lake',
-    location: 'Lady Lake, Florida',
-    source: 'News pipeline',
-  },
-  {
-    id: '6',
-    day: 'Wednesday 19 August',
-    date: 'wed19',
-    industry: 'Life Sciences',
-    significant: false,
-    type: 'News Mention',
-    title: 'Sterigenics opens X-ray sterilisation facility at North Carolina campus',
-    project: 'Sterigenics NC Campus',
-    company: 'Sterigenics',
-    location: 'North Carolina',
-    source: 'News pipeline',
-  },
-  {
-    id: '7',
-    day: 'Wednesday 19 August',
-    date: 'wed19',
-    industry: 'Power Delivery',
-    significant: false,
-    type: 'News Mention',
-    title: 'Southern Wisconsin landowners raise concerns over potential BECI 765-kV transmission line',
-    project: 'BECI 765-kV Line',
-    company: 'Southern Wisconsin',
-    location: 'Wisconsin',
-    source: 'News pipeline',
-  },
-  {
-    id: '8',
-    day: 'Tuesday 18 August',
-    date: 'tue18',
-    industry: 'Hi Tech',
-    significant: false,
-    type: 'News Mention',
-    title: 'OpenAI announces role in Pike County AI campus expected to create 35,000 construction jobs',
-    project: 'Pike County AI Campus',
-    company: 'OpenAI',
-    location: 'Pike County, Ohio',
-    source: 'News pipeline',
-  },
-  {
-    id: '9',
-    day: 'Tuesday 18 August',
-    date: 'tue18',
-    industry: 'Oil & Gas',
-    significant: false,
-    type: 'News Mention',
-    title: 'Proposed gas pipeline for Project Jupiter data center delayed to 2027, filings show',
-    project: 'Project Jupiter Pipeline',
-    company: 'New Mexico',
-    location: 'New Mexico',
-    source: 'News pipeline',
-  },
-  {
-    id: '10',
-    day: 'Tuesday 18 August',
-    date: 'tue18',
-    industry: 'Oil & Gas',
-    significant: false,
-    type: 'News Mention',
-    title: 'Controversial $2B Montana pipeline hits a speed bump',
-    project: 'Montana Pipeline',
-    company: 'Montana',
-    location: 'Montana',
-    source: 'News pipeline',
-  },
-  {
-    id: '11',
-    day: 'Tuesday 18 August',
-    date: 'tue18',
-    industry: 'Power Generation',
-    significant: false,
-    type: 'News Mention',
-    title: 'Arevon celebrates opening of its Nighthawk Energy Storage Project in Poway',
-    project: 'Nighthawk Energy Storage',
-    company: 'Arevon',
-    location: 'Poway, California',
-    source: 'News pipeline',
-  },
-  {
-    id: '12',
-    day: 'Monday 17 August',
-    date: 'mon17',
-    industry: 'Hi Tech',
-    significant: true,
-    type: 'Contract Award',
-    title: 'OEM: Nvidia — Nvidia in talks to invest $1.5bn in SB Energy',
-    project: 'Piketon AI Factory',
-    company: 'NVIDIA and SB Energy',
-    location: 'Piketon, Ohio',
-    source: 'News pipeline',
-  },
-  {
-    id: '13',
-    day: 'Friday 14 August',
-    date: 'fri14',
-    industry: 'Power Generation',
-    significant: true,
-    type: 'Contract Award',
-    title: 'EPC: Skanska',
-    project: 'Oyster Creek',
-    company: 'Skanska named EPC',
-    location: '',
-    source: 'News pipeline',
-  },
-  {
-    id: '14',
-    day: 'Friday 14 August',
-    date: 'fri14',
-    industry: 'Power Generation',
-    significant: true,
-    type: 'Contract Award',
-    title: 'OEM: Doosan Enerbility',
-    project: 'Natrium Nuclear Power Plant',
-    company: 'TerraPower',
-    location: 'Kemmerer, Wyoming',
-    source: 'News pipeline',
-    mergedSources: 4,
-  },
-  {
-    id: '15',
-    day: 'Thursday 13 August',
-    date: 'thu13',
-    industry: 'Hi Tech',
-    significant: true,
-    type: 'Contract Award',
-    title: 'EPC: Hillcore',
-    project: 'Project Matador',
-    company: 'Hillcore named EPC',
-    location: '',
-    source: 'News pipeline',
-  },
-  {
-    id: '16',
-    day: 'Wednesday 12 August',
-    date: 'wed12',
-    industry: 'Power Delivery',
-    significant: true,
-    type: 'Stage Change',
-    title: 'Stage: Announced → Under Construction',
-    project: 'ATC Data Center Connection',
-    company: 'American Transmission Co.',
-    location: 'Wisconsin',
-    source: 'News pipeline',
-  },
-]
+// Empty initial events array - will be populated with real data on mount
+const initialEvents: Event[] = []
 
 const overdueProjects = [
   { name: 'Montezuma II', location: 'Solano County, CA', overdue: '13 yr overdue' },
@@ -239,52 +34,109 @@ const overdueProjects = [
   { name: 'NY QP556 AC', location: 'Oneida/Albany County, NY', overdue: '2 yr overdue' },
 ]
 
+interface ProjectStats {
+  totalProjects: number
+  pastDueProjects: number
+  projectsByIndustry: Record<string, number>
+}
+
 export default function WhatChangedPage() {
-  const [events, setEvents] = useState<Event[]>(mockEvents)
+  const [events, setEvents] = useState<Event[]>(initialEvents)
   const [loading, setLoading] = useState(false)
   const [industryFilter, setIndustryFilter] = useState('all')
   const [significanceFilter, setSignificanceFilter] = useState('all')
+  const [stats, setStats] = useState<ProjectStats>({ totalProjects: 0, pastDueProjects: 0, projectsByIndustry: {} })
 
-  // Fetch updates from API
+  // Fetch project stats
   useEffect(() => {
-    const fetchUpdates = async () => {
+    const fetchStats = async () => {
       try {
-        setLoading(true)
-        const params = new URLSearchParams()
-        params.append('limit', '150')
-        if (significanceFilter === 'sig') params.append('significant', 'true')
-
-        const res = await fetch(`/api/updates?${params.toString()}`)
+        const res = await fetch('/api/projects')
         const data = await res.json()
 
-        if (data.success && data.data) {
-          // Transform API updates to event format
-          const transformed: Event[] = data.data.map((u: any) => ({
-            id: u.id,
-            day: new Date(u.created_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
-            date: u.created_at,
-            industry: u.project?.industry?.name || 'Unknown',
-            significant: u.is_significant,
-            type: u.event_type,
-            title: u.title,
-            project: u.project?.name || '',
-            company: u.company?.name || '',
-            location: u.project?.location || '',
-            source: 'News pipeline',
-            mergedSources: undefined,
-          }))
-          setEvents(transformed)
+        if (data.data && Array.isArray(data.data)) {
+          const projects = data.data
+          const projectsByIndustry: Record<string, number> = {}
+          let pastDueCount = 0
+
+          projects.forEach((p: any) => {
+            const industry = p.industry || 'Unknown'
+            projectsByIndustry[industry] = (projectsByIndustry[industry] || 0) + 1
+
+            if (p.past_due) {
+              pastDueCount++
+            }
+          })
+
+          setStats({
+            totalProjects: projects.length,
+            pastDueProjects: pastDueCount,
+            projectsByIndustry
+          })
         }
       } catch (error) {
-        console.error('Failed to fetch updates:', error)
-        setEvents(mockEvents)
+        console.error('Failed to fetch project stats:', error)
+      }
+    }
+
+    fetchStats()
+  }, [])
+
+  // Fetch projects with source links and display as events
+  useEffect(() => {
+    const fetchProjectsAsEvents = async () => {
+      try {
+        setLoading(true)
+
+        // Fetch companies for lookup
+        const companiesRes = await fetch('/api/companies')
+        const companiesData = await companiesRes.json()
+        const companyLookup: Record<string, string> = {}
+        companiesData.data?.forEach((c: any) => {
+          companyLookup[c.id] = c.name
+        })
+
+        const res = await fetch('/api/projects?limit=100')
+        const data = await res.json()
+
+        if (data.data && Array.isArray(data.data)) {
+          // Filter projects that have source URLs and transform to events
+          const transformed: Event[] = data.data
+            .filter((p: any) => p.source_url) // Only show projects with source URLs
+            .slice(0, 20)
+            .map((p: any) => {
+              const ownerId = Array.isArray(p.owner) ? p.owner[0] : p.owner
+              return {
+                id: p.id,
+                day: p.created_at ? new Date(p.created_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : 'Unknown',
+                date: p.created_at || new Date().toISOString(),
+                industry: p.industry || 'Unknown',
+                significant: false,
+                type: 'Project Update',
+                title: p.name,
+                project: p.name,
+                project_id: p.id,
+                company: ownerId ? companyLookup[ownerId] || ownerId : '',
+                company_id: ownerId,
+                location: p.location || '',
+                source: 'Source',
+                source_url: p.source_url,
+              }
+            })
+          setEvents(transformed)
+        } else {
+          setEvents([])
+        }
+      } catch (error) {
+        console.error('Failed to fetch projects:', error)
+        setEvents([])
       } finally {
         setLoading(false)
       }
     }
 
-    fetchUpdates()
-  }, [significanceFilter])
+    fetchProjectsAsEvents()
+  }, [])
 
   const dayGroups = useMemo(() => {
     const groups = new Map<string, Event[]>()
@@ -327,25 +179,25 @@ export default function WhatChangedPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(10.5rem, 1fr))', gap: '0.7rem' }}>
         <div style={{ background: '#FFFFFF', border: '1px solid #D6D9E8', borderRadius: '4px', padding: '0.85rem 1rem 0.95rem', display: 'flex', flexDirection: 'column', gap: '0.1rem', boxShadow: '0 1px 2px rgba(28,1,64,.06)' }}>
           <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.62rem', letterSpacing: '0.13em', textTransform: 'uppercase', color: '#5A5D78' }}>Active projects</div>
-          <div style={{ fontFamily: 'Chivo,sans-serif', fontWeight: 700, fontSize: '1.85rem', lineHeight: 1.1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>4,081</div>
+          <div style={{ fontFamily: 'Chivo,sans-serif', fontWeight: 700, fontSize: '1.85rem', lineHeight: 1.1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{stats.totalProjects.toLocaleString()}</div>
           <div style={{ fontSize: '0.8rem', color: '#5A5D78', lineHeight: 1.35 }}>Across six industries</div>
         </div>
 
         <div style={{ background: '#FFFFFF', border: '1px solid #D6D9E8', borderRadius: '4px', padding: '0.85rem 1rem 0.95rem', display: 'flex', flexDirection: 'column', gap: '0.1rem', boxShadow: '0 1px 2px rgba(28,1,64,.06)' }}>
           <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.62rem', letterSpacing: '0.13em', textTransform: 'uppercase', color: '#5A5D78' }}>Events this week</div>
-          <div style={{ fontFamily: 'Chivo,sans-serif', fontWeight: 700, fontSize: '1.85rem', lineHeight: 1.1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>153</div>
+          <div style={{ fontFamily: 'Chivo,sans-serif', fontWeight: 700, fontSize: '1.85rem', lineHeight: 1.1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{events.length}</div>
           <div style={{ fontSize: '0.8rem', color: '#5A5D78', lineHeight: 1.35 }}>New activity on tracked projects</div>
         </div>
 
         <div style={{ background: '#FFFFFF', border: '1px solid #D6D9E8', borderRadius: '4px', padding: '0.85rem 1rem 0.95rem', display: 'flex', flexDirection: 'column', gap: '0.1rem', boxShadow: '0 1px 2px rgba(28,1,64,.06)' }}>
           <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.62rem', letterSpacing: '0.13em', textTransform: 'uppercase', color: '#5A5D78' }}>Significant</div>
-          <div style={{ fontFamily: 'Chivo,sans-serif', fontWeight: 700, fontSize: '1.85rem', lineHeight: 1.1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>5</div>
+          <div style={{ fontFamily: 'Chivo,sans-serif', fontWeight: 700, fontSize: '1.85rem', lineHeight: 1.1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{events.filter(e => e.significant).length}</div>
           <div style={{ fontSize: '0.8rem', color: '#5A5D78', lineHeight: 1.35 }}>Awards, stage changes, filings — deduplicated</div>
         </div>
 
         <div style={{ background: '#FAF2DC', border: '1px solid #8A6A12', borderRadius: '4px', padding: '0.85rem 1rem 0.95rem', display: 'flex', flexDirection: 'column', gap: '0.1rem', boxShadow: '0 1px 2px rgba(28,1,64,.06)' }}>
           <div style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.62rem', letterSpacing: '0.13em', textTransform: 'uppercase', color: '#8A6A12' }}>Past due</div>
-          <div style={{ fontFamily: 'Chivo,sans-serif', fontWeight: 700, fontSize: '1.85rem', lineHeight: 1.1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', color: '#8A6A12' }}>134</div>
+          <div style={{ fontFamily: 'Chivo,sans-serif', fontWeight: 700, fontSize: '1.85rem', lineHeight: 1.1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', color: '#8A6A12' }}>{stats.pastDueProjects.toLocaleString()}</div>
           <div style={{ fontSize: '0.8rem', color: '#8A6A12', lineHeight: 1.35, opacity: 0.85 }}>Milestone date passed, no update since</div>
         </div>
       </div>
@@ -355,13 +207,13 @@ export default function WhatChangedPage() {
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem' }}>
           <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.62rem', letterSpacing: '0.13em', textTransform: 'uppercase', color: '#5A5D78', width: '5.2rem', flexShrink: 0 }}>Industry</span>
           {[
-            { key: 'all', label: 'All', count: 4081 },
-            { key: 'Power Generation', label: 'Power Generation', count: 3843 },
-            { key: 'Oil & Gas', label: 'Oil & Gas', count: 83 },
-            { key: 'Hi Tech', label: 'Hi Tech', count: 51 },
-            { key: 'Power Delivery', label: 'Power Delivery', count: 35 },
-            { key: 'Water Infrastructure', label: 'Water', count: 28 },
-            { key: 'Life Sciences', label: 'Life Sciences', count: 26 },
+            { key: 'all', label: 'All', count: stats.totalProjects },
+            { key: 'Power Generation', label: 'Power Generation', count: stats.projectsByIndustry['Power Generation'] || 0 },
+            { key: 'Power Delivery', label: 'Power Delivery', count: stats.projectsByIndustry['Power Delivery'] || 0 },
+            { key: 'Oil & Gas', label: 'Oil & Gas', count: stats.projectsByIndustry['Oil & Gas'] || 0 },
+            { key: 'Hi Tech', label: 'Hi Tech', count: stats.projectsByIndustry['Hi Tech'] || 0 },
+            { key: 'Life Sciences', label: 'Life Sciences', count: stats.projectsByIndustry['Life Sciences'] || 0 },
+            { key: 'Water', label: 'Water', count: stats.projectsByIndustry['Water'] || 0 },
           ].map(filter => (
             <button
               key={filter.key}
@@ -402,8 +254,8 @@ export default function WhatChangedPage() {
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem' }}>
           <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.62rem', letterSpacing: '0.13em', textTransform: 'uppercase', color: '#5A5D78', width: '5.2rem', flexShrink: 0 }}>Activity</span>
           {[
-            { key: 'all', label: 'All activity', count: 153 },
-            { key: 'sig', label: 'Significant only', count: 5 },
+            { key: 'all', label: 'All activity', count: events.length },
+            { key: 'sig', label: 'Significant only', count: events.filter(e => e.significant).length },
           ].map(filter => (
             <button
               key={filter.key}
@@ -489,19 +341,43 @@ export default function WhatChangedPage() {
                           {event.mergedSources} sources
                         </span>
                       )}
-                      <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.66rem', color: '#5A5D78', marginLeft: 'auto', whiteSpace: 'nowrap' }}>
-                        {event.source}
-                      </span>
+                      {event.source_url ? (
+                        <a href={event.source_url} target="_blank" rel="noopener noreferrer" style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.66rem', color: '#376BE9', marginLeft: 'auto', whiteSpace: 'nowrap', textDecoration: 'none', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'} onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}>
+                          {event.source}
+                        </a>
+                      ) : (
+                        <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.66rem', color: '#5A5D78', marginLeft: 'auto', whiteSpace: 'nowrap' }}>
+                          {event.source}
+                        </span>
+                      )}
                     </div>
 
                     <div style={{ fontWeight: 600, fontSize: '0.97rem', lineHeight: 1.35 }}>
-                      {event.title}
+                      {event.source_url ? (
+                        <a href={event.source_url} target="_blank" rel="noopener noreferrer" style={{ color: '#1C0140', textDecoration: 'none', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'} onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}>
+                          {event.title}
+                        </a>
+                      ) : (
+                        event.title
+                      )}
                     </div>
 
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem 0.7rem', fontSize: '0.82rem', color: '#5A5D78' }}>
-                      <span style={{ color: '#376BE9', fontWeight: 600 }}>{event.project}</span>
+                      {event.project_id ? (
+                        <Link href={`/projects/${event.project_id}`} style={{ color: '#376BE9', fontWeight: 600, textDecoration: 'none', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'} onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}>
+                          {event.project}
+                        </Link>
+                      ) : (
+                        <span style={{ color: '#376BE9', fontWeight: 600 }}>{event.project}</span>
+                      )}
                       <span style={{ opacity: 0.4 }}>·</span>
-                      <span>{event.company}</span>
+                      {event.company_id ? (
+                        <Link href={`/companies/${event.company_id}`} style={{ color: '#5A5D78', textDecoration: 'none', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'} onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}>
+                          {event.company}
+                        </Link>
+                      ) : (
+                        <span>{event.company}</span>
+                      )}
                       {event.location && (
                         <>
                           <span style={{ opacity: 0.4 }}>·</span>
