@@ -587,26 +587,61 @@ export async function getProjectUpdates(
   limit = 50,
   offset = 0
 ) {
-  let query = supabase.from('project_updates').select(`
-    id,
-    created_at,
-    event_type,
-    title,
-    description,
-    is_significant,
-    project_id,
-    company_id,
-    source_url,
-    projects:project_id (id, name, location, industry_id, industries:industry_id (name)),
-    companies:company_id (id, name)
-  `)
+  try {
+    // Try to fetch from Airtable first
+    const records = await fetchAirtableRecords('Project Updates', { maxRecords: 100000 })
+    let updates = records.map((record: any) => {
+      const fields = record.fields || {}
+      return {
+        id: record.id,
+        created_at: fields['Date'] || record.createdTime,
+        event_type: fields['Event Type'] || 'update',
+        title: fields['Title'] || fields['Project Name'] || 'Update',
+        description: fields['Description'] || fields['Details'] || '',
+        is_significant: fields['Significant'] === true || fields['Is Significant'] === true,
+        project_id: fields['Project'] ? (Array.isArray(fields['Project']) ? fields['Project'][0] : fields['Project']) : null,
+        company_id: fields['Company'] ? (Array.isArray(fields['Company']) ? fields['Company'][0] : fields['Company']) : null,
+        source_url: fields['Source URL'] || fields['Link'] || '',
+      }
+    })
 
-  const { data, error } = await query
-    .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1)
+    // Apply filters
+    if (filters?.is_significant) {
+      updates = updates.filter(u => u.is_significant)
+    }
+    if (filters?.industry) {
+      // Filter by industry (would need project data, skip for now)
+    }
 
-  if (error) throw error
-  return data
+    // Sort by date descending
+    updates.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+    // Apply pagination
+    return updates.slice(offset, offset + limit)
+  } catch (error) {
+    console.log('Airtable project updates not found, falling back to Supabase')
+    // Fallback to Supabase if Airtable doesn't have updates
+    let query = supabase.from('project_updates').select(`
+      id,
+      created_at,
+      event_type,
+      title,
+      description,
+      is_significant,
+      project_id,
+      company_id,
+      source_url,
+      projects:project_id (id, name, location, industry_id, industries:industry_id (name)),
+      companies:company_id (id, name)
+    `)
+
+    const { data, error } = await query
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
+
+    if (error) throw error
+    return data || []
+  }
 }
 
 // Search across projects and companies
