@@ -44,8 +44,14 @@ interface Project {
   milestone_description?: string
   created_at?: string
   updated_at?: string
+  owner?: string | string[]
+  developer?: string | string[]
+  developer_info?: string
+  epc?: string | string[]
+  oem?: string | string[]
   epc_award?: boolean | string
   oem_award?: boolean | string
+  key_personnel?: string | string[]
   updates?: Update[]
   milestones?: Milestone[]
   companies?: Company[]
@@ -311,6 +317,23 @@ export default function ProjectDetail({ params }: { params: Promise<{ id: string
               )}
             </div>
           </section>
+
+          {/* Developer */}
+          {project.developer && (
+            <section style={{ background: '#FFFFFF', border: '1px solid #D6D9E8', borderRadius: '4px', padding: '1rem', boxShadow: '0 1px 2px rgba(28,1,64,.06)' }}>
+              <h3 style={{ fontFamily: 'Chivo,sans-serif', fontWeight: 700, fontSize: '0.95rem', color: '#1C0140', margin: '0 0 0.8rem 0', paddingBottom: '0.6rem', borderBottom: '1px solid #E9EBF5' }}>
+                Developer
+              </h3>
+              <div style={{ fontSize: '0.9rem', color: '#5A5D78' }}>
+                {Array.isArray(project.developer) ? project.developer.join(', ') : project.developer}
+              </div>
+              {project.developer_info && (
+                <div style={{ fontSize: '0.85rem', color: '#5A5D78', marginTop: '0.6rem' }}>
+                  {project.developer_info}
+                </div>
+              )}
+            </section>
+          )}
 
           {/* Project Description */}
           {project.description && (
