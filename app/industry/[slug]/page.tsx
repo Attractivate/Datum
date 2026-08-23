@@ -325,13 +325,14 @@ export default function IndustryPage({ params }: { params: Promise<{ slug: strin
         setLoading(true)
         const res = await fetch(`/api/industries/${slug}`)
         const data = await res.json()
-        if (data.success && data.data) {
-          // Transform API response to UI format
+        if (data.success && data.data && data.data.stats && data.data.featured) {
+          // Only use API data if it has the required properties
           setIndustry(data.data)
         }
+        // Otherwise keep using mock data from initial state
       } catch (error) {
         console.error('Failed to fetch industry:', error)
-        // Fall back to mock data
+        // Fall back to mock data (already set in initial state)
       } finally {
         setLoading(false)
       }
@@ -353,7 +354,7 @@ export default function IndustryPage({ params }: { params: Promise<{ slug: strin
       <div style={{ background: 'linear-gradient(135deg, #1C0140 0%, #0D379B 100%)', color: 'white', padding: '3rem 2rem', borderRadius: '8px', marginBottom: '2rem' }}>
         <h1 style={{ font: '700 2.5rem/1.2 inherit', margin: '0 0 0.5rem 0' }}>{industry.name}</h1>
         <div style={{ display: 'flex', gap: '2rem', fontSize: '1rem', opacity: 0.9, flexWrap: 'wrap' }}>
-          {industry.stats.map((stat: any, i: number) => (
+          {industry.stats && industry.stats.map((stat: any, i: number) => (
             <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
               <span style={{ fontSize: '1.4rem', fontWeight: 700 }}>{stat.value}</span>
               <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>{stat.label}</span>
