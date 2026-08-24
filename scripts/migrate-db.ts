@@ -19,8 +19,11 @@ if (!supabaseUrl || !supabaseServiceKey) {
 }
 
 async function runMigration() {
+  const url = supabaseUrl!
+  const key = supabaseServiceKey!
+
   console.log('🚀 Starting Database Migration...')
-  console.log(`📍 Target: ${supabaseUrl}`)
+  console.log(`📍 Target: ${url}`)
 
   try {
     // Read schema file
@@ -29,19 +32,21 @@ async function runMigration() {
     console.log('✅ Schema file loaded')
 
     // Create Supabase client with service role
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const supabase = createClient(url, key)
 
     // Execute schema
     console.log('📝 Executing schema...')
-    const { error } = await supabase.rpc('exec_sql', {
-      sql: schema,
-    }).catch(async () => {
-      // Fallback: Use PostgreSQL native connection
+    let error: any = null
+    try {
+      const result = await supabase.rpc('exec_sql', {
+        sql: schema,
+      })
+      error = result.error
+    } catch (rpcError) {
+      // Fallback: RPC not available
       console.log('ℹ️  RPC not available, using direct SQL execution...')
-      // Note: This requires direct PostgreSQL connection
-      // For Supabase, we'd use the REST API
-      return { error: 'Using alternative method' }
-    })
+      error = 'Using alternative method'
+    }
 
     if (error) {
       console.log('⚠️  Note: RPC method may not be available')

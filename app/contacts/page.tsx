@@ -13,6 +13,8 @@ const mockContacts: Contact[] = [
     email: 'jrodriguez@nee.com',
     phone: '+1 (561) 694-4600',
     linkedin_url: 'https://www.linkedin.com/in/jamesrodriguez/',
+    created_at: '2024-08-23T10:00:00Z',
+    updated_at: '2024-08-23T10:00:00Z',
   },
   {
     id: '2',
@@ -22,6 +24,8 @@ const mockContacts: Contact[] = [
     email: 's.chen@brg.com',
     phone: '+1 (647) 847-7654',
     linkedin_url: 'https://www.linkedin.com/in/sarahchen/',
+    created_at: '2024-08-23T10:00:00Z',
+    updated_at: '2024-08-23T10:00:00Z',
   },
   {
     id: '3',
@@ -31,6 +35,8 @@ const mockContacts: Contact[] = [
     email: 'mthompson@southernco.com',
     phone: '+1 (404) 506-5000',
     linkedin_url: 'https://www.linkedin.com/in/michaelthompson/',
+    created_at: '2024-08-23T10:00:00Z',
+    updated_at: '2024-08-23T10:00:00Z',
   },
   {
     id: '4',
@@ -40,6 +46,8 @@ const mockContacts: Contact[] = [
     email: 'ewatson@dom.com',
     phone: '+1 (804) 819-2000',
     linkedin_url: 'https://www.linkedin.com/in/emilywatson/',
+    created_at: '2024-08-23T10:00:00Z',
+    updated_at: '2024-08-23T10:00:00Z',
   },
   {
     id: '5',
@@ -49,6 +57,8 @@ const mockContacts: Contact[] = [
     email: 'rpark@duke-energy.com',
     phone: '+1 (980) 373-2000',
     linkedin_url: 'https://www.linkedin.com/in/robertpark/',
+    created_at: '2024-08-23T10:00:00Z',
+    updated_at: '2024-08-23T10:00:00Z',
   },
   {
     id: '6',
@@ -58,6 +68,8 @@ const mockContacts: Contact[] = [
     email: 'landers@orsted.dk',
     phone: '+45 4476 9476',
     linkedin_url: 'https://www.linkedin.com/in/lisaandersson/',
+    created_at: '2024-08-23T10:00:00Z',
+    updated_at: '2024-08-23T10:00:00Z',
   },
   {
     id: '7',
@@ -67,6 +79,8 @@ const mockContacts: Contact[] = [
     email: 'dkumar@clearwayenergy.com',
     phone: '+1 (415) 625-0999',
     linkedin_url: 'https://www.linkedin.com/in/davidkumar/',
+    created_at: '2024-08-23T10:00:00Z',
+    updated_at: '2024-08-23T10:00:00Z',
   },
   {
     id: '8',
@@ -76,6 +90,8 @@ const mockContacts: Contact[] = [
     email: 'jhayes@nexteraresources.com',
     phone: '+1 (713) 207-3000',
     linkedin_url: 'https://www.linkedin.com/in/jenniferhayes/',
+    created_at: '2024-08-23T10:00:00Z',
+    updated_at: '2024-08-23T10:00:00Z',
   },
   {
     id: '9',
@@ -85,6 +101,8 @@ const mockContacts: Contact[] = [
     email: 'mwilliams@patternenergy.com',
     phone: '+1 (415) 551-8888',
     linkedin_url: 'https://www.linkedin.com/in/marcuswilliams/',
+    created_at: '2024-08-23T10:00:00Z',
+    updated_at: '2024-08-23T10:00:00Z',
   },
   {
     id: '10',
@@ -94,6 +112,8 @@ const mockContacts: Contact[] = [
     email: 'psharma@mhi-global.com',
     phone: '+1 (713) 877-5432',
     linkedin_url: 'https://www.linkedin.com/in/priyasharma/',
+    created_at: '2024-08-23T10:00:00Z',
+    updated_at: '2024-08-23T10:00:00Z',
   },
 ]
 

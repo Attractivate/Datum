@@ -51,7 +51,7 @@ export interface Project {
   key_personnel?: string | string[]
   first_seen_date?: string
   last_updated_date?: string
-  milestone_date?: string
+  milestone_date?: string | null
   milestone?: string
   milestone_description?: string
   source_url?: string
@@ -64,14 +64,11 @@ export interface Project {
 }
 
 export interface ProjectWithRelations extends Project {
-  owner?: Company
-  developer?: Company
-  epc?: Company
-  oem?: Company
   industry?: Industry
   milestones?: ProjectMilestone[]
   updates?: ProjectUpdate[]
   technologies?: Technology[]
+  companies?: CompanyRole[]
 }
 
 export interface Technology {

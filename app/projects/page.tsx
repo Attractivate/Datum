@@ -5,9 +5,8 @@ import Link from 'next/link'
 import type { Project } from '@/lib/types'
 import { industriesConfig, capacityBands } from '@/lib/industries-config'
 
-interface ProjectRow extends Project {
+type ProjectRow = Project & {
   owner?: string | { name: string }
-  industryRaw?: string
 }
 
 export default function ProjectsList() {

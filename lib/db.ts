@@ -32,10 +32,8 @@ export async function getProjects(filters?: ProjectFilters) {
       // Apply filters to cached data
       if (filters?.industry && filters.industry !== 'all') {
         projects = projects.filter(p => {
-          const industry = p.industry || ''
           const industryRaw = p.industryRaw || ''
-          return industry.toLowerCase() === filters.industry!.toLowerCase() ||
-                 industryRaw.toLowerCase().startsWith(filters.industry!.toLowerCase())
+          return industryRaw.toLowerCase().startsWith(filters.industry!.toLowerCase())
         })
       }
 
@@ -389,7 +387,7 @@ export async function getCompanies(filters?: CompanyFilters) {
     // Sort by name
     companies.sort((a, b) => a.name.localeCompare(b.name))
 
-    return companies as Company[]
+    return companies
   } catch (error) {
     console.error('Error fetching companies from Airtable:', error)
     // Fallback to empty array instead of throwing
@@ -666,7 +664,7 @@ export async function getContacts(filters?: ContactFilters, limit = 50, offset =
 
 export async function getContactsForProject(projectId: string) {
   try {
-    const project = await getProject(projectId)
+    const project = await getProjectById(projectId)
     if (!project || !project.owner) return []
 
     const ownerId = Array.isArray(project.owner) ? project.owner[0] : project.owner
