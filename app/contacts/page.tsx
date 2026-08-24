@@ -37,10 +37,9 @@ const mockContacts: Contact[] = [
     name: 'Dr. Emily Watson',
     title: 'Head of Strategic Projects',
     company_id: '4',
-    industry: 'Power Gen',
     email: 'ewatson@dom.com',
     phone: '+1 (804) 819-2000',
-    linkedin: 'https://www.linkedin.com/in/emilywatson/',
+    linkedin_url: 'https://www.linkedin.com/in/emilywatson/',
   },
   {
     id: '5',
@@ -244,14 +243,13 @@ export default function ContactsPage() {
                 </td>
                 <td style={{ padding: '0.8rem', fontSize: '0.9rem' }}>
                   <div style={{ fontWeight: 500, color: '#1a1a1a' }}>{contact.title}</div>
-                  <div style={{ fontSize: '0.8rem', color: '#666' }}>{contact.titleLevel}</div>
                 </td>
                 <td style={{ padding: '0.8rem', fontSize: '0.9rem' }}>
-                  <div style={{ fontWeight: 600, color: '#376BE9' }}>{(contact as ContactWithCompany).company_name || contact.company || '—'}</div>
+                  <div style={{ fontWeight: 600, color: '#376BE9' }}>{(contact as ContactWithCompany).company_name || '—'}</div>
                 </td>
                 <td style={{ padding: '0.8rem', fontSize: '0.9rem' }}>
                   <span style={{ background: '#f0f0f0', color: '#666', padding: '0.25rem 0.5rem', borderRadius: '2px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                    {(contact as ContactWithCompany).company_industry || contact.industry || '—'}
+                    {(contact as ContactWithCompany).company_industry || '—'}
                   </span>
                 </td>
                 <td style={{ padding: '0.8rem', fontSize: '0.9rem' }}>
@@ -259,8 +257,8 @@ export default function ContactsPage() {
                   <div style={{ fontSize: '0.8rem', color: '#666' }}>{contact.phone}</div>
                 </td>
                 <td style={{ padding: '0.8rem', fontSize: '0.9rem' }}>
-                  {contact.linkedin ? (
-                    <a href={contact.linkedin} target="_blank" rel="noopener noreferrer" style={{ color: '#376BE9', textDecoration: 'none', fontSize: '0.85rem' }}>LinkedIn →</a>
+                  {contact.linkedin_url ? (
+                    <a href={contact.linkedin_url} target="_blank" rel="noopener noreferrer" style={{ color: '#376BE9', textDecoration: 'none', fontSize: '0.85rem' }}>LinkedIn →</a>
                   ) : (
                     <span style={{ color: '#999' }}>—</span>
                   )}
