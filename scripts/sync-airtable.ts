@@ -196,17 +196,16 @@ async function syncContacts(): Promise<{ inserted: number; failed: number; durat
         const companyRef = fields['Company']?.[0] || fields['Company Name'] || null
         const companyId = companyRef ? (companyMap.get(companyRef) || companyMap.get(companyRef.toString().toLowerCase())) : null
 
-        if (!companyId) {
-          console.warn(`   ⚠️  Contact ${record.id} references unknown company: ${companyRef}`)
-          failed++
-          continue
+        // Store contact even if company not found (set company_id to null)
+        if (!companyId && companyRef) {
+          console.warn(`   ⚠️  Contact ${record.id} references unknown company: ${companyRef} (inserting with null company_id)`)
         }
 
         const contact = {
           airtable_id: record.id, // Capture Airtable record ID
           name: fields['Name'] || 'Unknown',
           title: fields['Title'] || null,
-          company_id: companyId,
+          company_id: companyId || null,
           email: fields['Email'] || null,
           phone: fields['Phone'] || null,
           linkedin_url: fields['LinkedIn URL'] || fields['LinkedIn'] || null,
@@ -259,15 +258,14 @@ async function syncProjectUpdates(): Promise<{ inserted: number; failed: number;
         const projectRef = fields['Project']?.[0] || fields['Project ID'] || null
         const projectId = projectRef ? projectMap.get(projectRef) : null
 
-        if (!projectId) {
-          console.warn(`   ⚠️  Update ${record.id} references unknown project: ${projectRef}`)
-          failed++
-          continue
+        // Store update even if project not found (set project_id to null)
+        if (!projectId && projectRef) {
+          console.warn(`   ⚠️  Update ${record.id} references unknown project: ${projectRef} (inserting with null project_id)`)
         }
 
         const update = {
           airtable_id: record.id, // Capture Airtable record ID
-          project_id: projectId,
+          project_id: projectId || null,
           event_type: fields['Event Type'] || 'News Mention',
           title: fields['Title'] || fields['Project Name'] || 'Update',
           description: fields['Description'] || fields['Details'] || null,
