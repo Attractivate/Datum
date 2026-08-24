@@ -85,15 +85,21 @@ async function syncCompanies(): Promise<{ inserted: number; failed: number; dura
       try {
         const fields = record.fields || {}
         const company = {
+          airtable_id: record.id, // Capture Airtable record ID
           name: fields['Company Name'] || fields['Name'] || 'Unknown',
           headquarters: fields['Headquarters'] || fields['HQ'] || null,
-          industry: fields['Industry'] || null,
           description: fields['Description'] || fields['About'] || null,
+          // Note: 'industry' field skipped - use industry_id FK instead
+          // Industry mapping will be done in a separate pass or manually
         }
 
-        const { error } = await supabase.from('companies').insert([company])
+        // UPSERT: Update if exists (by airtable_id), insert if new
+        const { error } = await supabase.from('companies').upsert([company], {
+          onConflict: 'airtable_id',
+        })
 
-        if (error && error.code !== 'PGRST103') {
+        if (error) {
+          console.error(`   ⚠️  Failed to sync company ${record.id}:`, error.message)
           failed++
         } else {
           inserted++
@@ -103,7 +109,7 @@ async function syncCompanies(): Promise<{ inserted: number; failed: number; dura
       }
     }
 
-    console.log(`   ✅ ${inserted} inserted, ${failed} failed`)
+    console.log(`   ✅ ${inserted} synced, ${failed} failed`)
   } catch (error) {
     console.error('❌ Companies sync failed:', error)
   }
@@ -132,18 +138,23 @@ async function syncProjects(): Promise<{ inserted: number; failed: number; durat
         }
 
         const project = {
+          airtable_id: record.id, // Capture Airtable record ID
           name: fields['Project Name'] || fields['Name'] || 'Unknown',
           description: fields['Project Details'] || fields['Description'] || null,
-          location: fields['Location'] || null,
+          location: fields['Location'] || 'Unknown Location', // Set default if null
           stage: fields['Stage of Project'] || fields['Project Stage'] || null,
           capacity_mw: capacity_mw,
           past_due: fields['Past Due'] === true,
           milestone_date: fields['Projected Milestone Date'] || null,
         }
 
-        const { error } = await supabase.from('projects').insert([project])
+        // UPSERT: Update if exists (by airtable_id), insert if new
+        const { error } = await supabase.from('projects').upsert([project], {
+          onConflict: 'airtable_id',
+        })
 
-        if (error && error.code !== 'PGRST103') {
+        if (error) {
+          console.error(`   ⚠️  Failed to sync project ${record.id}:`, error.message)
           failed++
         } else {
           inserted++
@@ -153,7 +164,7 @@ async function syncProjects(): Promise<{ inserted: number; failed: number; durat
       }
     }
 
-    console.log(`   ✅ ${inserted} inserted, ${failed} failed`)
+    console.log(`   ✅ ${inserted} synced, ${failed} failed`)
   } catch (error) {
     console.error('❌ Projects sync failed:', error)
   }
@@ -171,24 +182,28 @@ async function syncContacts(): Promise<{ inserted: number; failed: number; durat
     const records = await fetchAirtableRecords('Contacts', { maxRecords: 10000 })
     console.log(`   Found ${records.length} contacts`)
 
-    const { data: companiesData } = await supabase.from('companies').select('id, name')
+    const { data: companiesData } = await supabase.from('companies').select('id, airtable_id, name')
 
     const companyMap = new Map<string, string>()
     companiesData?.forEach((c: any) => {
+      if (c.airtable_id) companyMap.set(c.airtable_id, c.id)
       companyMap.set(c.name.toLowerCase(), c.id)
     })
 
     for (const record of records) {
       try {
         const fields = record.fields || {}
-        const companyName = fields['Company']?.[0] || fields['Company Name'] || null
-        const companyId = companyName ? companyMap.get(companyName.toString().toLowerCase()) : null
+        const companyRef = fields['Company']?.[0] || fields['Company Name'] || null
+        const companyId = companyRef ? (companyMap.get(companyRef) || companyMap.get(companyRef.toString().toLowerCase())) : null
 
-        if (!companyId) continue
+        if (!companyId) {
+          console.warn(`   ⚠️  Contact ${record.id} references unknown company: ${companyRef}`)
+          failed++
+          continue
+        }
 
         const contact = {
-          first_name: fields['First Name'] || null,
-          last_name: fields['Last Name'] || null,
+          airtable_id: record.id, // Capture Airtable record ID
           name: fields['Name'] || 'Unknown',
           title: fields['Title'] || null,
           company_id: companyId,
@@ -197,9 +212,13 @@ async function syncContacts(): Promise<{ inserted: number; failed: number; durat
           linkedin_url: fields['LinkedIn URL'] || fields['LinkedIn'] || null,
         }
 
-        const { error } = await supabase.from('contacts').insert([contact])
+        // UPSERT: Update if exists (by airtable_id), insert if new
+        const { error } = await supabase.from('contacts').upsert([contact], {
+          onConflict: 'airtable_id',
+        })
 
-        if (error && error.code !== 'PGRST103') {
+        if (error) {
+          console.error(`   ⚠️  Failed to sync contact ${record.id}:`, error.message)
           failed++
         } else {
           inserted++
@@ -209,7 +228,7 @@ async function syncContacts(): Promise<{ inserted: number; failed: number; durat
       }
     }
 
-    console.log(`   ✅ ${inserted} inserted, ${failed} failed`)
+    console.log(`   ✅ ${inserted} synced, ${failed} failed`)
   } catch (error) {
     console.error('❌ Contacts sync failed:', error)
   }
@@ -227,10 +246,28 @@ async function syncProjectUpdates(): Promise<{ inserted: number; failed: number;
     const records = await fetchAirtableRecords('Project Updates', { maxRecords: 50000 })
     console.log(`   Found ${records.length} updates`)
 
+    // Build project lookup by airtable_id
+    const { data: projectsData } = await supabase.from('projects').select('id, airtable_id')
+    const projectMap = new Map<string, string>()
+    projectsData?.forEach((p: any) => {
+      if (p.airtable_id) projectMap.set(p.airtable_id, p.id)
+    })
+
     for (const record of records) {
       try {
         const fields = record.fields || {}
+        const projectRef = fields['Project']?.[0] || fields['Project ID'] || null
+        const projectId = projectRef ? projectMap.get(projectRef) : null
+
+        if (!projectId) {
+          console.warn(`   ⚠️  Update ${record.id} references unknown project: ${projectRef}`)
+          failed++
+          continue
+        }
+
         const update = {
+          airtable_id: record.id, // Capture Airtable record ID
+          project_id: projectId,
           event_type: fields['Event Type'] || 'News Mention',
           title: fields['Title'] || fields['Project Name'] || 'Update',
           description: fields['Description'] || fields['Details'] || null,
@@ -238,9 +275,13 @@ async function syncProjectUpdates(): Promise<{ inserted: number; failed: number;
           is_significant: fields['Significant'] === true || fields['Is Significant'] === true,
         }
 
-        const { error } = await supabase.from('project_updates').insert([update])
+        // UPSERT: Update if exists (by airtable_id), insert if new
+        const { error } = await supabase.from('project_updates').upsert([update], {
+          onConflict: 'airtable_id',
+        })
 
-        if (error && error.code !== 'PGRST103') {
+        if (error) {
+          console.error(`   ⚠️  Failed to sync update ${record.id}:`, error.message)
           failed++
         } else {
           inserted++
@@ -250,7 +291,7 @@ async function syncProjectUpdates(): Promise<{ inserted: number; failed: number;
       }
     }
 
-    console.log(`   ✅ ${inserted} inserted, ${failed} failed`)
+    console.log(`   ✅ ${inserted} synced, ${failed} failed`)
   } catch (error) {
     console.error('❌ Project updates sync failed:', error)
   }
