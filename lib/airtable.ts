@@ -222,6 +222,12 @@ export function mapAirtableCompanyRecord(record: any) {
     roles = Array.isArray(fields['Role(s)']) ? fields['Role(s)'] : [fields['Role(s)']]
   }
 
+  // Handle developer field
+  let developer = null
+  if (fields['Developer']) {
+    developer = Array.isArray(fields['Developer']) ? fields['Developer'] : fields['Developer']
+  }
+
   return {
     id: record.id,
     name: fields['Company Name'] || fields.Name || 'Unnamed Company',
@@ -231,6 +237,7 @@ export function mapAirtableCompanyRecord(record: any) {
     description: fields.Description || '',
     roles,
     website: fields['Website'] || '',
+    developer,
     created_at: record.createdTime,
     updated_at: record.createdTime,
   }

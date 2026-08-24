@@ -13,17 +13,100 @@ import type {
   ContactFilters,
 } from './types'
 
+// Cache for projects (in-memory)
+let projectsCache: Project[] | null = null
+let projectsCacheTime = 0
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+
 // Projects
 export async function getProjects(filters?: ProjectFilters) {
   try {
     console.log('Starting getProjects with filters:', filters)
 
-    // Fetch all projects from Airtable (cached by Next.js)
+    // Check cache first
+    const now = Date.now()
+    if (projectsCache && (now - projectsCacheTime) < CACHE_TTL) {
+      console.log(`Using cached projects (${projectsCache.length} projects)`)
+      let projects = projectsCache
+
+      // Apply filters to cached data
+      if (filters?.industry && filters.industry !== 'all') {
+        projects = projects.filter(p => {
+          const industry = p.industry || ''
+          const industryRaw = p.industryRaw || ''
+          return industry.toLowerCase() === filters.industry!.toLowerCase() ||
+                 industryRaw.toLowerCase().startsWith(filters.industry!.toLowerCase())
+        })
+      }
+
+      if (filters?.type && filters.type !== 'all') {
+        projects = projects.filter(p => {
+          return p.industryRaw && p.industryRaw.toLowerCase().includes(` - ${filters.type!.toLowerCase()}`)
+        })
+      }
+
+      if (filters?.stage && filters.stage !== 'all') {
+        projects = projects.filter(p => p.stage && p.stage.toLowerCase() === filters.stage!.toLowerCase())
+      }
+
+      if (filters?.state && filters.state !== 'all') {
+        const stateUpper = filters.state!.toUpperCase()
+        const stateMap: Record<string, string[]> = {
+          'TX': ['TX', 'TEXAS'],
+          'CA': ['CA', 'CALIFORNIA'],
+          'OK': ['OK', 'OKLAHOMA'],
+          'IL': ['IL', 'ILLINOIS'],
+          'NY': ['NY', 'NEW YORK'],
+          'OH': ['OH', 'OHIO'],
+        }
+        const stateVariants = stateMap[stateUpper] || [stateUpper]
+        projects = projects.filter(p => {
+          if (!p.location) return false
+          const locUpper = p.location.toUpperCase()
+          return stateVariants.some(variant => locUpper.includes(`, ${variant}`))
+        })
+      }
+
+      if (filters?.capacity && filters.capacity !== 'all') {
+        const [lo, hi] = filters.capacity.split('-').map(x => x === '' ? Infinity : parseFloat(x))
+        projects = projects.filter(p => {
+          const mw = p.capacity_mw || 0
+          if (mw === 0) return false
+          return mw >= lo && mw < hi
+        })
+      }
+
+      if (filters?.past_due) {
+        projects = projects.filter(p => p.past_due === true)
+      }
+
+      if (filters?.needs_review) {
+        projects = projects.filter(p => p.needs_review === true)
+      }
+
+      if (filters?.search) {
+        const searchLower = filters.search.toLowerCase()
+        projects = projects.filter(p => {
+          const ownerStr = Array.isArray(p.owner) ? p.owner.join(' ') : (typeof p.owner === 'string' ? p.owner : '')
+          return p.name.toLowerCase().includes(searchLower) ||
+                 ownerStr.toLowerCase().includes(searchLower) ||
+                 p.location.toLowerCase().includes(searchLower)
+        })
+      }
+
+      return projects
+    }
+
+    // Fetch all projects from the Projects table (includes all sectors via views)
     const records = await fetchAirtableRecords('Projects', { maxRecords: 100000 })
-    console.log(`Fetched ${records.length} project records from Airtable`)
+    console.log(`Fetched ${records.length} project records from Projects table`)
 
     let projects = records.map(mapAirtableProjectRecord)
     console.log(`Mapped to ${projects.length} projects`)
+
+    // Update cache
+    projectsCache = projects
+    projectsCacheTime = now
 
     // Apply ALL filters on server-side using the mapped data
     // This is more reliable than Airtable formulas which depend on exact field structure
@@ -340,6 +423,39 @@ export async function getCompanyByAirtableId(airtableId: string) {
   }
 }
 
+// Get projects for a company (from Airtable)
+export async function getProjectsByCompanyId(companyId: string) {
+  try {
+    const projects = await getProjects()
+    console.log(`[getProjectsByCompanyId] Total projects to filter: ${projects.length}`)
+
+    const filteredProjects = projects.filter((project: Project) => {
+      const checkField = (field: any) => {
+        if (!field) return false
+        if (Array.isArray(field)) {
+          return field.includes(companyId)
+        }
+        return field === companyId
+      }
+      return checkField(project.owner) || checkField(project.epc) || checkField(project.oem) || checkField(project.developer)
+    })
+
+    console.log(`[getProjectsByCompanyId] Filtered to ${filteredProjects.length} projects for company ${companyId}`)
+
+    return filteredProjects.map((p: Project) => ({
+      id: p.id,
+      name: p.name,
+      stage: p.stage,
+      capacity_mw: p.capacity_mw,
+      location: p.location,
+      first_seen_date: p.first_seen_date,
+    }))
+  } catch (error) {
+    console.error('Error fetching projects for company:', error)
+    return []
+  }
+}
+
 // Helper function to calculate company statistics by role
 export async function getCompanyStatsWithRoles(companyId: string, projects: Project[]) {
   try {
@@ -548,6 +664,20 @@ export async function getContacts(filters?: ContactFilters, limit = 50, offset =
   }
 }
 
+export async function getContactsForProject(projectId: string) {
+  try {
+    const project = await getProject(projectId)
+    if (!project || !project.owner) return []
+
+    const ownerId = Array.isArray(project.owner) ? project.owner[0] : project.owner
+    const { data } = await getContacts({ company_id: ownerId }, 100)
+    return data
+  } catch (error) {
+    console.error('Error fetching project contacts:', error)
+    return []
+  }
+}
+
 export async function getContactById(id: string) {
   const { data, error } = await supabase
     .from('contacts')
@@ -618,7 +748,7 @@ export async function getProjectUpdates(
 
     // Apply pagination
     return updates.slice(offset, offset + limit)
-  } catch (error) {
+  } catch (airtableError) {
     console.log('Airtable project updates not found, falling back to Supabase')
     // Fallback to Supabase if Airtable doesn't have updates
     let query = supabase.from('project_updates').select(`

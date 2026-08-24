@@ -16,7 +16,7 @@ interface CompanyWithStats extends Company {
   }
 }
 
-const roles = ['All roles', 'Owner', 'EPC', 'OEM']
+const roles = ['All roles', 'Owner', 'EPC', 'OEM', 'Developer']
 const sortOptions = [
   { label: 'Recent activity', key: 'recent' },
   { label: 'Most projects', key: 'projects' },

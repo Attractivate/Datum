@@ -47,6 +47,8 @@ interface Company {
 export default function CompanyDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const [company, setCompany] = useState<Company | null>(null)
+  const [contacts, setContacts] = useState<Contact[]>([])
+  const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(false)
   const [timelineFilter, setTimelineFilter] = useState('all')
 
@@ -58,6 +60,20 @@ export default function CompanyDetail({ params }: { params: Promise<{ id: string
         const data = await res.json()
         if (data.success && data.data) {
           setCompany(data.data)
+
+          // Fetch contacts for this company
+          const contactsRes = await fetch(`/api/companies/${id}/contacts`)
+          const contactsData = await contactsRes.json()
+          if (contactsData.success && contactsData.data) {
+            setContacts(contactsData.data)
+          }
+
+          // Fetch projects for this company
+          const projectsRes = await fetch(`/api/companies/${id}/projects`)
+          const projectsData = await projectsRes.json()
+          if (projectsData.success && projectsData.data) {
+            setProjects(projectsData.data)
+          }
         }
       } catch (error) {
         console.error('Failed to fetch company:', error)
@@ -78,8 +94,6 @@ export default function CompanyDetail({ params }: { params: Promise<{ id: string
   }
 
   const updates = company.updates || []
-  const projects = company.projects || []
-  const contacts = company.contacts || []
 
   return (
     <main style={{ maxWidth: '84rem', margin: '0 auto', padding: '1.4rem clamp(1rem, 3vw, 2rem) 5rem', display: 'flex', flexDirection: 'column', gap: '1.4rem' }}>
@@ -202,6 +216,53 @@ export default function CompanyDetail({ params }: { params: Promise<{ id: string
                     </Link>
                   ))}
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Contacts Panel */}
+          {contacts.length > 0 && (
+            <div style={{ background: '#FFFFFF', border: '1px solid #D6D9E8', borderRadius: '4px', boxShadow: '0 1px 2px rgba(28,1,64,.06)', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: '0.75rem 1.05rem', borderBottom: '1px solid #D6D9E8', display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.4rem 0.8rem' }}>
+                <h2 style={{ fontFamily: 'Chivo,sans-serif', fontWeight: 700, fontSize: '1rem', margin: 0, marginRight: 'auto' }}>Contacts</h2>
+                <span style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: '0.68rem', color: '#5A5D78' }}>{contacts.length} contacts</span>
+              </div>
+              <div style={{ padding: '1.05rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                {contacts.map((contact, idx) => (
+                  <div key={contact.id} style={{ padding: '0.75rem', borderTop: idx === 0 ? 'none' : '1px solid #D6D9E8', borderLeft: '3px solid #376BE9', background: '#F9FAFB', borderRadius: '2px', fontSize: '0.88rem' }}>
+                    <div style={{ fontWeight: 600, color: '#1C0140', marginBottom: '0.2rem' }}>
+                      {contact.name}
+                    </div>
+                    {contact.title && (
+                      <div style={{ fontSize: '0.78rem', color: '#5A5D78', marginBottom: '0.4rem' }}>
+                        {contact.title}
+                      </div>
+                    )}
+                    <div style={{ fontSize: '0.78rem', color: '#5A5D78', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                      {contact.email && (
+                        <div>
+                          <a href={`mailto:${contact.email}`} style={{ color: '#376BE9', textDecoration: 'none' }}>
+                            📧 {contact.email}
+                          </a>
+                        </div>
+                      )}
+                      {contact.phone && (
+                        <div>
+                          <a href={`tel:${contact.phone}`} style={{ color: '#376BE9', textDecoration: 'none' }}>
+                            📞 {contact.phone}
+                          </a>
+                        </div>
+                      )}
+                      {contact.linkedin_url && (
+                        <div>
+                          <a href={contact.linkedin_url} target="_blank" rel="noopener noreferrer" style={{ color: '#376BE9', textDecoration: 'none' }}>
+                            💼 LinkedIn
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}

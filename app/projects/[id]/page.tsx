@@ -28,6 +28,15 @@ interface Company {
   role?: string
 }
 
+interface Contact {
+  id: string
+  name: string
+  title: string
+  email: string
+  phone: string
+  linkedin_url: string
+}
+
 interface Project {
   id: string
   name: string
@@ -60,6 +69,7 @@ interface Project {
 export default function ProjectDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const [project, setProject] = useState<Project | null>(null)
+  const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'updates' | 'milestones'>('updates')
 
@@ -71,6 +81,13 @@ export default function ProjectDetail({ params }: { params: Promise<{ id: string
         const data = await res.json()
         if (data.success && data.data) {
           setProject(data.data)
+
+          // Fetch contacts for this project
+          const contactsRes = await fetch(`/api/projects/${id}/contacts`)
+          const contactsData = await contactsRes.json()
+          if (contactsData.success && contactsData.data) {
+            setContacts(contactsData.data)
+          }
         }
       } catch (error) {
         console.error('Failed to fetch project:', error)
@@ -317,6 +334,50 @@ export default function ProjectDetail({ params }: { params: Promise<{ id: string
               )}
             </div>
           </section>
+
+          {/* Contacts */}
+          {contacts.length > 0 && (
+            <section style={{ background: '#FFFFFF', border: '1px solid #D6D9E8', borderRadius: '4px', padding: '1rem', boxShadow: '0 1px 2px rgba(28,1,64,.06)' }}>
+              <h3 style={{ fontFamily: 'Chivo,sans-serif', fontWeight: 700, fontSize: '0.95rem', color: '#1C0140', margin: '0 0 0.8rem 0', paddingBottom: '0.6rem', borderBottom: '1px solid #E9EBF5' }}>
+                Contacts
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {contacts.map((contact) => (
+                  <div key={contact.id} style={{ padding: '0.8rem', background: '#F9FAFB', borderRadius: '3px', borderLeft: '3px solid #376BE9' }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.95rem', color: '#1C0140' }}>{contact.name}</div>
+                    {contact.title && (
+                      <div style={{ fontSize: '0.85rem', color: '#5A5D78', marginTop: '0.2rem' }}>
+                        {contact.title}
+                      </div>
+                    )}
+                    <div style={{ fontSize: '0.85rem', color: '#5A5D78', marginTop: '0.4rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                      {contact.email && (
+                        <div>
+                          <a href={`mailto:${contact.email}`} style={{ color: '#376BE9', textDecoration: 'none' }}>
+                            📧 {contact.email}
+                          </a>
+                        </div>
+                      )}
+                      {contact.phone && (
+                        <div>
+                          <a href={`tel:${contact.phone}`} style={{ color: '#376BE9', textDecoration: 'none' }}>
+                            📞 {contact.phone}
+                          </a>
+                        </div>
+                      )}
+                      {contact.linkedin_url && (
+                        <div>
+                          <a href={contact.linkedin_url} target="_blank" rel="noopener noreferrer" style={{ color: '#376BE9', textDecoration: 'none' }}>
+                            💼 LinkedIn Profile
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Developer */}
           {project.developer && (
