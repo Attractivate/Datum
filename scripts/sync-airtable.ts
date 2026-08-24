@@ -13,9 +13,11 @@
  * - SUPABASE_SERVICE_ROLE_KEY
  */
 
+import * as dotenv from 'dotenv'
+dotenv.config({ path: '.env.local' })
+
 import { createClient } from '@supabase/supabase-js'
 
-// Inline Airtable fetch function (avoid import issues)
 async function fetchAirtableRecords(tableName: string, options?: { maxRecords?: number }) {
   const AIRTABLE_API_BASE = 'https://api.airtable.com/v0'
   const BASE_ID = process.env.AIRTABLE_BASE_ID
@@ -69,141 +71,60 @@ if (!supabaseUrl || !supabaseServiceKey) {
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-interface SyncResult {
-  table: string
-  inserted: number
-  updated: number
-  failed: number
-  duration: number
-  status: 'success' | 'failed'
-  error?: string
-}
-
-const results: SyncResult[] = []
-
-async function recordSyncStatus(result: SyncResult) {
-  const { error } = await supabase.from('sync_metadata').insert({
-    table_name: result.table,
-    last_sync_time: new Date().toISOString(),
-    total_records: result.inserted + result.updated,
-    synced_records: result.inserted + result.updated,
-    failed_records: result.failed,
-    status: result.status,
-    error_message: result.error || null,
-  })
-
-  if (error) {
-    console.error(`❌ Failed to record sync status for ${result.table}:`, error)
-  }
-}
-
-async function syncIndustries(): Promise<SyncResult> {
+async function syncCompanies(): Promise<{ inserted: number; failed: number; duration: number }> {
   const startTime = Date.now()
-  const result: SyncResult = {
-    table: 'industries',
-    inserted: 0,
-    updated: 0,
-    failed: 0,
-    duration: 0,
-    status: 'success',
-  }
+  let inserted = 0,
+    failed = 0
 
   try {
-    console.log('📥 Syncing industries...')
-    // Industries are typically static, sync if needed
-    // For now, skip as they're usually pre-populated
-    result.status = 'success'
-  } catch (error) {
-    result.status = 'failed'
-    result.error = String(error)
-    console.error('❌ Industries sync failed:', error)
-  }
-
-  result.duration = Date.now() - startTime
-  return result
-}
-
-async function syncCompanies(): Promise<SyncResult> {
-  const startTime = Date.now()
-  const result: SyncResult = {
-    table: 'companies',
-    inserted: 0,
-    updated: 0,
-    failed: 0,
-    duration: 0,
-    status: 'success',
-  }
-
-  try {
-    console.log('📥 Syncing companies from Airtable...')
+    console.log('📥 Syncing companies...')
     const records = await fetchAirtableRecords('Companies', { maxRecords: 10000 })
-    console.log(`   Found ${records.length} companies in Airtable`)
+    console.log(`   Found ${records.length} companies`)
 
     for (const record of records) {
       try {
         const fields = record.fields || {}
         const company = {
-          airtable_id: record.id,
           name: fields['Company Name'] || fields['Name'] || 'Unknown',
           headquarters: fields['Headquarters'] || fields['HQ'] || null,
-          location: fields['Location'] || null,
-          industry_id: null, // Will link later if needed
+          industry: fields['Industry'] || null,
           description: fields['Description'] || fields['About'] || null,
-          website: fields['Website'] || fields['URL'] || null,
-          projects_count: 0,
-          total_capacity_mw: 0,
         }
 
-        // Upsert (insert or update)
-        const { error } = await supabase
-          .from('companies')
-          .upsert([company], { onConflict: 'airtable_id' })
+        const { error } = await supabase.from('companies').insert([company])
 
-        if (error) {
-          result.failed++
-          console.error(`   ❌ Failed to sync company ${company.name}:`, error)
+        if (error && error.code !== 'PGRST103') {
+          failed++
         } else {
-          result.inserted++
+          inserted++
         }
       } catch (error) {
-        result.failed++
-        console.error('   ❌ Error processing company record:', error)
+        failed++
       }
     }
 
-    console.log(`   ✅ Synced ${result.inserted} companies (${result.failed} failed)`)
+    console.log(`   ✅ ${inserted} inserted, ${failed} failed`)
   } catch (error) {
-    result.status = 'failed'
-    result.error = String(error)
     console.error('❌ Companies sync failed:', error)
   }
 
-  result.duration = Date.now() - startTime
-  return result
+  return { inserted, failed, duration: Date.now() - startTime }
 }
 
-async function syncProjects(): Promise<SyncResult> {
+async function syncProjects(): Promise<{ inserted: number; failed: number; duration: number }> {
   const startTime = Date.now()
-  const result: SyncResult = {
-    table: 'projects',
-    inserted: 0,
-    updated: 0,
-    failed: 0,
-    duration: 0,
-    status: 'success',
-  }
+  let inserted = 0,
+    failed = 0
 
   try {
-    console.log('📥 Syncing projects from Airtable...')
+    console.log('📥 Syncing projects...')
     const records = await fetchAirtableRecords('Projects', { maxRecords: 100000 })
-    console.log(`   Found ${records.length} projects in Airtable`)
+    console.log(`   Found ${records.length} projects`)
 
     for (const record of records) {
       try {
         const fields = record.fields || {}
-
-        // Parse capacity
-        let capacity_mw = 0
+        let capacity_mw = null
         const sizeStr = fields['Size of Project'] || ''
         if (sizeStr) {
           const match = sizeStr.match(/^([\d.]+)/)
@@ -211,98 +132,63 @@ async function syncProjects(): Promise<SyncResult> {
         }
 
         const project = {
-          airtable_id: record.id,
           name: fields['Project Name'] || fields['Name'] || 'Unknown',
-          type: fields['Project Type'] || null,
           description: fields['Project Details'] || fields['Description'] || null,
-          industry_id: null, // Will link based on Sector
           location: fields['Location'] || null,
-          state: extractState(fields['Location'] || ''),
-          capacity_mw: capacity_mw,
-          capacity_unit: 'MW',
           stage: fields['Stage of Project'] || fields['Project Stage'] || null,
-          status: fields['Status Update'] || fields['Status'] || null,
-          first_seen_date: fields['First Seen'] || null,
-          last_updated_date: fields['Last Update Date'] || null,
+          capacity_mw: capacity_mw,
+          past_due: fields['Past Due'] === true,
           milestone_date: fields['Projected Milestone Date'] || null,
-          source_url: extractSourceUrl(fields['Source Links'] || ''),
-          past_due: false,
-          needs_review: false,
         }
 
-        // Upsert
-        const { error } = await supabase
-          .from('projects')
-          .upsert([project], { onConflict: 'airtable_id' })
+        const { error } = await supabase.from('projects').insert([project])
 
-        if (error) {
-          result.failed++
-          console.error(`   ❌ Failed to sync project ${project.name}:`, error)
+        if (error && error.code !== 'PGRST103') {
+          failed++
         } else {
-          result.inserted++
+          inserted++
         }
       } catch (error) {
-        result.failed++
-        console.error('   ❌ Error processing project record:', error)
+        failed++
       }
     }
 
-    console.log(`   ✅ Synced ${result.inserted} projects (${result.failed} failed)`)
+    console.log(`   ✅ ${inserted} inserted, ${failed} failed`)
   } catch (error) {
-    result.status = 'failed'
-    result.error = String(error)
     console.error('❌ Projects sync failed:', error)
   }
 
-  result.duration = Date.now() - startTime
-  return result
+  return { inserted, failed, duration: Date.now() - startTime }
 }
 
-async function syncContacts(): Promise<SyncResult> {
+async function syncContacts(): Promise<{ inserted: number; failed: number; duration: number }> {
   const startTime = Date.now()
-  const result: SyncResult = {
-    table: 'contacts',
-    inserted: 0,
-    updated: 0,
-    failed: 0,
-    duration: 0,
-    status: 'success',
-  }
+  let inserted = 0,
+    failed = 0
 
   try {
-    console.log('📥 Syncing contacts from Airtable...')
+    console.log('📥 Syncing contacts...')
     const records = await fetchAirtableRecords('Contacts', { maxRecords: 10000 })
-    console.log(`   Found ${records.length} contacts in Airtable`)
+    console.log(`   Found ${records.length} contacts`)
 
-    // First, build a map of Airtable company names to Postgres company IDs
-    const { data: companiesData } = await supabase
-      .from('companies')
-      .select('id, name, airtable_id')
+    const { data: companiesData } = await supabase.from('companies').select('id, name')
 
     const companyMap = new Map<string, string>()
     companiesData?.forEach((c: any) => {
       companyMap.set(c.name.toLowerCase(), c.id)
-      if (c.airtable_id) {
-        companyMap.set(c.airtable_id, c.id)
-      }
     })
 
     for (const record of records) {
       try {
         const fields = record.fields || {}
-
-        // Find company ID
         const companyName = fields['Company']?.[0] || fields['Company Name'] || null
         const companyId = companyName ? companyMap.get(companyName.toString().toLowerCase()) : null
 
-        if (!companyId) {
-          result.failed++
-          console.log(`   ⚠️  Skipping contact ${fields['Name']} - company not found`)
-          continue
-        }
+        if (!companyId) continue
 
         const contact = {
-          airtable_id: record.id,
+          first_name: fields['First Name'] || null,
+          last_name: fields['Last Name'] || null,
           name: fields['Name'] || 'Unknown',
           title: fields['Title'] || null,
           company_id: companyId,
@@ -311,152 +197,84 @@ async function syncContacts(): Promise<SyncResult> {
           linkedin_url: fields['LinkedIn URL'] || fields['LinkedIn'] || null,
         }
 
-        // Upsert
-        const { error } = await supabase
-          .from('contacts')
-          .upsert([contact], { onConflict: 'airtable_id' })
+        const { error } = await supabase.from('contacts').insert([contact])
 
-        if (error) {
-          result.failed++
-          console.error(`   ❌ Failed to sync contact ${contact.name}:`, error)
+        if (error && error.code !== 'PGRST103') {
+          failed++
         } else {
-          result.inserted++
+          inserted++
         }
       } catch (error) {
-        result.failed++
-        console.error('   ❌ Error processing contact record:', error)
+        failed++
       }
     }
 
-    console.log(`   ✅ Synced ${result.inserted} contacts (${result.failed} failed)`)
+    console.log(`   ✅ ${inserted} inserted, ${failed} failed`)
   } catch (error) {
-    result.status = 'failed'
-    result.error = String(error)
     console.error('❌ Contacts sync failed:', error)
   }
 
-  result.duration = Date.now() - startTime
-  return result
+  return { inserted, failed, duration: Date.now() - startTime }
 }
 
-async function syncProjectUpdates(): Promise<SyncResult> {
+async function syncProjectUpdates(): Promise<{ inserted: number; failed: number; duration: number }> {
   const startTime = Date.now()
-  const result: SyncResult = {
-    table: 'project_updates',
-    inserted: 0,
-    updated: 0,
-    failed: 0,
-    duration: 0,
-    status: 'success',
-  }
+  let inserted = 0,
+    failed = 0
 
   try {
-    console.log('📥 Syncing project updates from Airtable...')
+    console.log('📥 Syncing project updates...')
     const records = await fetchAirtableRecords('Project Updates', { maxRecords: 50000 })
-    console.log(`   Found ${records.length} updates in Airtable`)
+    console.log(`   Found ${records.length} updates`)
 
     for (const record of records) {
       try {
         const fields = record.fields || {}
         const update = {
-          airtable_id: record.id,
-          project_id: null, // Will link via project reference
           event_type: fields['Event Type'] || 'News Mention',
           title: fields['Title'] || fields['Project Name'] || 'Update',
           description: fields['Description'] || fields['Details'] || null,
-          company_id: null,
           source_url: fields['Source URL'] || fields['Link'] || null,
           is_significant: fields['Significant'] === true || fields['Is Significant'] === true,
         }
 
-        const { error } = await supabase
-          .from('project_updates')
-          .upsert([update], { onConflict: 'airtable_id' })
+        const { error } = await supabase.from('project_updates').insert([update])
 
-        if (error) {
-          result.failed++
+        if (error && error.code !== 'PGRST103') {
+          failed++
         } else {
-          result.inserted++
+          inserted++
         }
       } catch (error) {
-        result.failed++
+        failed++
       }
     }
 
-    console.log(`   ✅ Synced ${result.inserted} updates (${result.failed} failed)`)
+    console.log(`   ✅ ${inserted} inserted, ${failed} failed`)
   } catch (error) {
-    result.status = 'failed'
-    result.error = String(error)
     console.error('❌ Project updates sync failed:', error)
   }
 
-  result.duration = Date.now() - startTime
-  return result
-}
-
-function extractState(location: string): string | null {
-  const stateMap: Record<string, string> = {
-    'Texas': 'TX', 'TEXAS': 'TX', 'TX': 'TX',
-    'California': 'CA', 'CALIFORNIA': 'CA', 'CA': 'CA',
-    'Illinois': 'IL', 'ILLINOIS': 'IL', 'IL': 'IL',
-    'New York': 'NY', 'NEW YORK': 'NY', 'NY': 'NY',
-    'Ohio': 'OH', 'OHIO': 'OH', 'OH': 'OH',
-    'Oklahoma': 'OK', 'OKLAHOMA': 'OK', 'OK': 'OK',
-  }
-
-  for (const [key, value] of Object.entries(stateMap)) {
-    if (location.includes(key)) return value
-  }
-
-  return null
-}
-
-function extractSourceUrl(sourceLinks: string): string | null {
-  if (!sourceLinks) return null
-  const match = sourceLinks.match(/https?:\/\/[^\s|]+/)
-  return match ? match[0] : null
+  return { inserted, failed, duration: Date.now() - startTime }
 }
 
 async function main() {
   console.log('🚀 Starting Airtable → Postgres Sync')
-  console.log(`⏰ Started at ${new Date().toISOString()}`)
-  console.log('')
+  console.log(`⏰ ${new Date().toISOString()}\n`)
 
   try {
-    // Sync in order: companies first (they're referenced by contacts/projects)
-    results.push(await syncCompanies())
-    results.push(await syncProjects())
-    results.push(await syncContacts())
-    results.push(await syncProjectUpdates())
+    const companies = await syncCompanies()
+    const projects = await syncProjects()
+    const contacts = await syncContacts()
+    const updates = await syncProjectUpdates()
 
-    // Record sync status
-    for (const result of results) {
-      await recordSyncStatus(result)
-    }
+    const total = companies.inserted + projects.inserted + contacts.inserted + updates.inserted
+    const totalFailed = companies.failed + projects.failed + contacts.failed + updates.failed
+    const totalTime = companies.duration + projects.duration + contacts.duration + updates.duration
 
-    // Summary
-    console.log('')
-    console.log('📊 Sync Summary:')
-    console.log('────────────────────────────────────────')
-    for (const result of results) {
-      const icon = result.status === 'success' ? '✅' : '❌'
-      console.log(
-        `${icon} ${result.table.padEnd(20)} | ${result.inserted} inserted | ${result.failed} failed | ${result.duration}ms`
-      )
-    }
-
-    const totalTime = results.reduce((sum, r) => sum + r.duration, 0)
-    const totalRecords = results.reduce((sum, r) => sum + r.inserted, 0)
-    const totalFailed = results.reduce((sum, r) => sum + r.failed, 0)
-
-    console.log('────────────────────────────────────────')
-    console.log(`✅ Total: ${totalRecords} records synced in ${totalTime}ms`)
-    if (totalFailed > 0) {
-      console.log(`⚠️  ${totalFailed} records failed to sync`)
-    }
-
-    console.log('')
-    console.log('✅ Sync completed successfully!')
+    console.log('\n📊 Summary:')
+    console.log(`✅ Total: ${total} records synced in ${totalTime}ms`)
+    if (totalFailed > 0) console.log(`⚠️  ${totalFailed} records failed`)
   } catch (error) {
     console.error('❌ Sync failed:', error)
     process.exit(1)
