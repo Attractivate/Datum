@@ -146,6 +146,10 @@ async function syncProjects(): Promise<{ inserted: number; failed: number; durat
           capacity_mw: capacity_mw,
           past_due: fields['Past Due'] === true,
           milestone_date: fields['Projected Milestone Date'] || null,
+          owner: fields['Owner'] || null,
+          developer: fields['Developer'] || null,
+          epc: fields['EPC'] || null,
+          oem: fields['OEM'] || null,
         }
 
         // UPSERT: Update if exists (by airtable_id), insert if new

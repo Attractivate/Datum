@@ -128,6 +128,10 @@ async function syncProject(
     capacity_mw,
     past_due: fields?.['Past Due'] === true,
     milestone_date: fields?.['Projected Milestone Date'] || null,
+    owner: fields?.['Owner'] || null,
+    developer: fields?.['Developer'] || null,
+    epc: fields?.['EPC'] || null,
+    oem: fields?.['OEM'] || null,
   }
 
   const { error } = await supabase.from('projects').upsert([project], {

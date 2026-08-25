@@ -87,7 +87,11 @@ When a record is created/updated/deleted in Airtable:
     "Size of Project": "{{record.fields.Size of Project}}",
     "Stage of Project": "{{record.fields.Stage of Project}}",
     "Past Due": "{{record.fields.Past Due}}",
-    "Projected Milestone Date": "{{record.fields.Projected Milestone Date}}"
+    "Projected Milestone Date": "{{record.fields.Projected Milestone Date}}",
+    "Owner": "{{record.fields.Owner}}",
+    "Developer": "{{record.fields.Developer}}",
+    "EPC": "{{record.fields.EPC}}",
+    "OEM": "{{record.fields.OEM}}"
   }
 }
 ```
