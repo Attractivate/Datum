@@ -127,6 +127,13 @@ async function syncProjects(): Promise<{ inserted: number; failed: number; durat
     const records = await fetchAirtableRecords('Projects', { maxRecords: 100000 })
     console.log(`   Found ${records.length} projects`)
 
+    // Build company lookup map (name -> ID)
+    const { data: companiesData } = await supabase.from('companies').select('id, name, airtable_id')
+    const companyNameMap = new Map<string, string>()
+    companiesData?.forEach((c: any) => {
+      if (c.name) companyNameMap.set(c.name.toLowerCase(), c.id)
+    })
+
     for (const record of records) {
       try {
         const fields = record.fields || {}
@@ -137,19 +144,26 @@ async function syncProjects(): Promise<{ inserted: number; failed: number; durat
           if (match) capacity_mw = parseFloat(match[1])
         }
 
+        // Map company names to IDs
+        const getCompanyId = (companyNameOrArray: any) => {
+          if (!companyNameOrArray) return null
+          const name = Array.isArray(companyNameOrArray) ? companyNameOrArray[0] : companyNameOrArray
+          return companyNameMap.get(name?.toString().toLowerCase()) || null
+        }
+
         const project = {
-          airtable_id: record.id, // Capture Airtable record ID
+          airtable_id: record.id,
           name: fields['Project Name'] || fields['Name'] || 'Unknown',
           description: fields['Project Details'] || fields['Description'] || null,
-          location: fields['Location'] || 'Unknown Location', // Set default if null
+          location: fields['Location'] || 'Unknown Location',
           stage: fields['Stage of Project'] || fields['Project Stage'] || null,
           capacity_mw: capacity_mw,
           past_due: fields['Past Due'] === true,
           milestone_date: fields['Projected Milestone Date'] || null,
-          owner: fields['Owner'] || null,
-          developer: fields['Developer'] || null,
-          epc: fields['EPC'] || null,
-          oem: fields['OEM'] || null,
+          owner_id: getCompanyId(fields['Owner']),
+          developer_id: getCompanyId(fields['Developer']),
+          epc_id: getCompanyId(fields['EPC']),
+          oem_id: getCompanyId(fields['OEM']),
         }
 
         // UPSERT: Update if exists (by airtable_id), insert if new

@@ -119,6 +119,19 @@ async function syncProject(
     if (match) capacity_mw = parseFloat(match[1])
   }
 
+  // Get company lookup
+  const { data: companiesData } = await supabase.from('companies').select('id, name')
+  const companyNameMap = new Map<string, string>()
+  companiesData?.forEach((c: any) => {
+    if (c.name) companyNameMap.set(c.name.toLowerCase(), c.id)
+  })
+
+  const getCompanyId = (companyNameOrArray: any) => {
+    if (!companyNameOrArray) return null
+    const name = Array.isArray(companyNameOrArray) ? companyNameOrArray[0] : companyNameOrArray
+    return companyNameMap.get(name?.toString().toLowerCase()) || null
+  }
+
   const project = {
     airtable_id,
     name: fields?.['Project Name'] || fields?.['Name'] || 'Unknown',
@@ -128,10 +141,10 @@ async function syncProject(
     capacity_mw,
     past_due: fields?.['Past Due'] === true,
     milestone_date: fields?.['Projected Milestone Date'] || null,
-    owner: fields?.['Owner'] || null,
-    developer: fields?.['Developer'] || null,
-    epc: fields?.['EPC'] || null,
-    oem: fields?.['OEM'] || null,
+    owner_id: getCompanyId(fields?.['Owner']),
+    developer_id: getCompanyId(fields?.['Developer']),
+    epc_id: getCompanyId(fields?.['EPC']),
+    oem_id: getCompanyId(fields?.['OEM']),
   }
 
   const { error } = await supabase.from('projects').upsert([project], {
