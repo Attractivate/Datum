@@ -119,17 +119,20 @@ async function syncProject(
     if (match) capacity_mw = parseFloat(match[1])
   }
 
-  // Get company lookup
-  const { data: companiesData } = await supabase.from('companies').select('id, name')
+  // Get company lookup (by airtable_id for linked records)
+  const { data: companiesData } = await supabase.from('companies').select('id, name, airtable_id')
+  const companyIdMap = new Map<string, string>()
   const companyNameMap = new Map<string, string>()
   companiesData?.forEach((c: any) => {
+    if (c.airtable_id) companyIdMap.set(c.airtable_id, c.id)
     if (c.name) companyNameMap.set(c.name.toLowerCase(), c.id)
   })
 
-  const getCompanyId = (companyNameOrArray: any) => {
-    if (!companyNameOrArray) return null
-    const name = Array.isArray(companyNameOrArray) ? companyNameOrArray[0] : companyNameOrArray
-    return companyNameMap.get(name?.toString().toLowerCase()) || null
+  const getCompanyId = (companyRefOrArray: any) => {
+    if (!companyRefOrArray) return null
+    const ref = Array.isArray(companyRefOrArray) ? companyRefOrArray[0] : companyRefOrArray
+    if (!ref) return null
+    return companyIdMap.get(ref) || companyNameMap.get(ref?.toString().toLowerCase()) || null
   }
 
   const project = {
@@ -142,9 +145,9 @@ async function syncProject(
     past_due: fields?.['Past Due'] === true,
     milestone_date: fields?.['Projected Milestone Date'] || null,
     owner_id: getCompanyId(fields?.['Owner']),
-    developer_id: getCompanyId(fields?.['Developer']),
-    epc_id: getCompanyId(fields?.['EPC']),
-    oem_id: getCompanyId(fields?.['OEM']),
+    developer_id: getCompanyId(fields?.['Project Developer'] || fields?.['Developer']),
+    epc_id: getCompanyId(fields?.['EPC'] || fields?.['Engineering Procurement & Construction']),
+    oem_id: getCompanyId(fields?.['OEM'] || fields?.['Original Equipment Manufacturer']),
   }
 
   const { error } = await supabase.from('projects').upsert([project], {
@@ -248,10 +251,10 @@ async function syncProjectUpdate(
   const update = {
     airtable_id,
     project_id,
-    event_type: fields?.['Event Type'] || 'News Mention',
-    title: fields?.['Title'] || fields?.['Project Name'] || 'Update',
-    description: fields?.['Description'] || fields?.['Details'] || null,
-    source_url: fields?.['Source URL'] || fields?.['Link'] || null,
+    event_type: fields?.['Update Type'] || fields?.['Event Type'] || 'News Mention',
+    title: fields?.['Update Title'] || fields?.['Title'] || fields?.['Project Name'] || 'Update',
+    description: fields?.['Summary'] || fields?.['Description'] || fields?.['Details'] || null,
+    source_url: fields?.['Source'] ? (Array.isArray(fields?.['Source']) ? fields?.['Source'][0] : fields?.['Source']) : (fields?.['Source URL'] || fields?.['Link'] || null),
     is_significant: fields?.['Significant'] === true || fields?.['Is Significant'] === true,
   }
 

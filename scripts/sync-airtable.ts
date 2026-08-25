@@ -127,10 +127,12 @@ async function syncProjects(): Promise<{ inserted: number; failed: number; durat
     const records = await fetchAirtableRecords('Projects', { maxRecords: 100000 })
     console.log(`   Found ${records.length} projects`)
 
-    // Build company lookup map (name -> ID)
+    // Build company lookup map (airtable_id -> UUID)
     const { data: companiesData } = await supabase.from('companies').select('id, name, airtable_id')
+    const companyIdMap = new Map<string, string>()
     const companyNameMap = new Map<string, string>()
     companiesData?.forEach((c: any) => {
+      if (c.airtable_id) companyIdMap.set(c.airtable_id, c.id)
       if (c.name) companyNameMap.set(c.name.toLowerCase(), c.id)
     })
 
@@ -144,11 +146,14 @@ async function syncProjects(): Promise<{ inserted: number; failed: number; durat
           if (match) capacity_mw = parseFloat(match[1])
         }
 
-        // Map company names to IDs
-        const getCompanyId = (companyNameOrArray: any) => {
-          if (!companyNameOrArray) return null
-          const name = Array.isArray(companyNameOrArray) ? companyNameOrArray[0] : companyNameOrArray
-          return companyNameMap.get(name?.toString().toLowerCase()) || null
+        // Map company linked records (Airtable record IDs) to Supabase UUIDs
+        const getCompanyId = (companyRefOrArray: any) => {
+          if (!companyRefOrArray) return null
+          // Airtable linked records are arrays of record IDs
+          const ref = Array.isArray(companyRefOrArray) ? companyRefOrArray[0] : companyRefOrArray
+          if (!ref) return null
+          // Try lookup by airtable_id first (correct for linked records)
+          return companyIdMap.get(ref) || companyNameMap.get(ref?.toString().toLowerCase()) || null
         }
 
         const project = {
@@ -161,9 +166,9 @@ async function syncProjects(): Promise<{ inserted: number; failed: number; durat
           past_due: fields['Past Due'] === true,
           milestone_date: fields['Projected Milestone Date'] || null,
           owner_id: getCompanyId(fields['Owner']),
-          developer_id: getCompanyId(fields['Developer']),
-          epc_id: getCompanyId(fields['EPC']),
-          oem_id: getCompanyId(fields['OEM']),
+          developer_id: getCompanyId(fields['Project Developer'] || fields['Developer']),
+          epc_id: getCompanyId(fields['EPC'] || fields['Engineering Procurement & Construction']),
+          oem_id: getCompanyId(fields['OEM'] || fields['Original Equipment Manufacturer']),
         }
 
         // UPSERT: Update if exists (by airtable_id), insert if new
@@ -273,7 +278,8 @@ async function syncProjectUpdates(): Promise<{ inserted: number; failed: number;
     for (const record of records) {
       try {
         const fields = record.fields || {}
-        const projectRef = fields['Project']?.[0] || fields['Project ID'] || null
+        // Project is a linked record (array of Airtable record IDs)
+        const projectRef = Array.isArray(fields['Project']) ? fields['Project']?.[0] : fields['Project ID']
         const projectId = projectRef ? projectMap.get(projectRef) : null
 
         // Store update even if project not found (set project_id to null)
@@ -282,12 +288,12 @@ async function syncProjectUpdates(): Promise<{ inserted: number; failed: number;
         }
 
         const update = {
-          airtable_id: record.id, // Capture Airtable record ID
+          airtable_id: record.id,
           project_id: projectId || null,
-          event_type: fields['Event Type'] || 'News Mention',
-          title: fields['Title'] || fields['Project Name'] || 'Update',
-          description: fields['Description'] || fields['Details'] || null,
-          source_url: fields['Source URL'] || fields['Link'] || null,
+          event_type: fields['Update Type'] || fields['Event Type'] || 'News Mention',
+          title: fields['Update Title'] || fields['Title'] || fields['Project Name'] || 'Update',
+          description: fields['Summary'] || fields['Description'] || fields['Details'] || null,
+          source_url: fields['Source'] ? (Array.isArray(fields['Source']) ? fields['Source'][0] : fields['Source']) : (fields['Source URL'] || fields['Link'] || null),
           is_significant: fields['Significant'] === true || fields['Is Significant'] === true,
         }
 
