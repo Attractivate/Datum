@@ -78,30 +78,39 @@ export default function SearchPage() {
         const res = await fetch(`/api/search?${params.toString()}`)
         const data = await res.json()
 
-        // Transform API results to UI format
+        // Transform API results to UI format with deduplication
         if (data.success && data.data) {
           const transformed: SearchResult[] = []
+          const seenIds = new Set<string>()
 
+          // Deduplicate projects by ID
           data.data.projects?.forEach((p: any) => {
-            transformed.push({
-              id: p.id,
-              title: p.name,
-              type: 'Project',
-              meta: [p.capacity_mw ? `${p.capacity_mw} MW` : '', p.location, p.stage],
-              desc: p.description || p.type || '',
-              tags: [p.name],
-            })
+            if (!seenIds.has(p.id)) {
+              seenIds.add(p.id)
+              transformed.push({
+                id: p.id,
+                title: p.name,
+                type: 'Project',
+                meta: [p.capacity_mw ? `${p.capacity_mw} MW` : '', p.location, p.stage],
+                desc: p.description || p.type || '',
+                tags: [p.name],
+              })
+            }
           })
 
+          // Deduplicate companies by ID
           data.data.companies?.forEach((c: any) => {
-            transformed.push({
-              id: c.id,
-              title: c.name,
-              type: 'Company',
-              meta: [c.location, `${c.projects_count} projects tracked`],
-              desc: c.description || '',
-              tags: [c.name],
-            })
+            if (!seenIds.has(c.id)) {
+              seenIds.add(c.id)
+              transformed.push({
+                id: c.id,
+                title: c.name,
+                type: 'Company',
+                meta: [c.location, `${c.projects_count} projects tracked`],
+                desc: c.description || '',
+                tags: [c.name],
+              })
+            }
           })
 
           setResults(transformed.length > 0 ? transformed : mockResults)
@@ -273,30 +282,34 @@ export default function SearchPage() {
           {tab === 'all' && (
             <div>
               {results.map((result) => (
-                <div
-                  key={result.id}
-                  style={{
-                    background: '#FFFFFF',
-                    border: '1px solid #e0e0e0',
-                    borderRadius: '6px',
-                    padding: '1.2rem',
-                    marginBottom: '1rem',
-                    transition: 'all 0.15s',
-                    cursor: 'pointer',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = '#376BE9'
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = '#e0e0e0'
-                    e.currentTarget.style.boxShadow = 'none'
-                  }}
+                <Link
+                  href={result.type === 'Project' ? `/projects/${result.id}` : `/companies/${result.id}`}
+                  style={{ textDecoration: 'none' }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '0.6rem' }}>
-                    <div style={{ color: '#376BE9', fontWeight: 600, fontSize: '1rem' }}>
-                      {result.title}
-                    </div>
+                  <div
+                    key={result.id}
+                    style={{
+                      background: '#FFFFFF',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '6px',
+                      padding: '1.2rem',
+                      marginBottom: '1rem',
+                      transition: 'all 0.15s',
+                      cursor: 'pointer',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#376BE9'
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = '#e0e0e0'
+                      e.currentTarget.style.boxShadow = 'none'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '0.6rem' }}>
+                      <div style={{ color: '#376BE9', fontWeight: 600, fontSize: '1rem' }}>
+                        {result.title}
+                      </div>
                     <span style={{ background: '#f0f0f0', color: '#666', padding: '0.25rem 0.6rem', borderRadius: '3px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.03em', whiteSpace: 'nowrap' }}>
                       {result.type}
                     </span>
@@ -319,7 +332,8 @@ export default function SearchPage() {
                       </span>
                     ))}
                   </div>
-                </div>
+                  </div>
+                </Link>
               ))}
             </div>
           )}
