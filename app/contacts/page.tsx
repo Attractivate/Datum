@@ -273,8 +273,14 @@ export default function ContactsPage() {
                   </span>
                 </td>
                 <td style={{ padding: '0.8rem', fontSize: '0.9rem' }}>
-                  <div><a href={`mailto:${contact.email}`} style={{ color: '#376BE9', textDecoration: 'none', fontSize: '0.85rem' }}>{contact.email}</a></div>
-                  <div style={{ fontSize: '0.8rem', color: '#666' }}>{contact.phone}</div>
+                  {contact.email ? (
+                    <>
+                      <div><a href={`mailto:${contact.email}`} style={{ color: '#376BE9', textDecoration: 'none', fontSize: '0.85rem' }}>{contact.email}</a></div>
+                      {contact.phone && <div style={{ fontSize: '0.8rem', color: '#666' }}>{contact.phone}</div>}
+                    </>
+                  ) : (
+                    <span style={{ color: '#999' }}>—</span>
+                  )}
                 </td>
                 <td style={{ padding: '0.8rem', fontSize: '0.9rem' }}>
                   {contact.linkedin_url ? (

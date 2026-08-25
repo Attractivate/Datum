@@ -111,6 +111,14 @@ export default function ProjectDetail({ params }: { params: Promise<{ id: string
   const milestones = project.milestones || []
   const companies = project.companies || []
 
+  // Build companies list from project relationships if not provided
+  const companiesInvolved = companies.length > 0 ? companies : [
+    ...(project.owner ? (Array.isArray(project.owner) ? project.owner.map(o => ({ id: o, name: o, role: 'Owner' })) : [{ id: project.owner, name: project.owner, role: 'Owner' }]) : []),
+    ...(project.developer ? (Array.isArray(project.developer) ? project.developer.map(d => ({ id: d, name: d, role: 'Developer' })) : [{ id: project.developer, name: project.developer, role: 'Developer' }]) : []),
+    ...(project.epc ? (Array.isArray(project.epc) ? project.epc.map(e => ({ id: e, name: e, role: 'EPC' })) : [{ id: project.epc, name: project.epc, role: 'EPC' }]) : []),
+    ...(project.oem ? (Array.isArray(project.oem) ? project.oem.map(o => ({ id: o, name: o, role: 'OEM' })) : [{ id: project.oem, name: project.oem, role: 'OEM' }]) : []),
+  ].filter(c => c && c.name) // Remove empty entries
+
   return (
     <main style={{ maxWidth: '96rem', margin: '0 auto', padding: '1.4rem clamp(1rem, 3vw, 2rem) 5rem', display: 'flex', flexDirection: 'column', gap: '1.8rem' }}>
       {/* Breadcrumb */}
@@ -318,16 +326,16 @@ export default function ProjectDetail({ params }: { params: Promise<{ id: string
               Companies Involved
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-              {companies.length > 0 ? (
-                companies.map((company) => (
-                  <Link key={company.id} href={`/companies/${company.id}`} style={{ display: 'flex', flexDirection: 'column', padding: '0.6rem', borderRadius: '3px', background: '#F9FAFB', textDecoration: 'none', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = '#F0F4FF'} onMouseLeave={(e) => e.currentTarget.style.background = '#F9FAFB'}>
+              {companiesInvolved.length > 0 ? (
+                companiesInvolved.map((company, idx) => (
+                  <div key={`${company.id || company.name}-${idx}`} style={{ display: 'flex', flexDirection: 'column', padding: '0.6rem', borderRadius: '3px', background: '#F9FAFB', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = '#F0F4FF'} onMouseLeave={(e) => e.currentTarget.style.background = '#F9FAFB'}>
                     <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#376BE9' }}>{company.name}</div>
                     {company.role && (
                       <div style={{ fontSize: '0.75rem', color: '#5A5D78', marginTop: '0.1rem' }}>
                         {company.role}
                       </div>
                     )}
-                  </Link>
+                  </div>
                 ))
               ) : (
                 <div style={{ fontSize: '0.9rem', color: '#5A5D78' }}>No companies assigned</div>

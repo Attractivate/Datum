@@ -100,10 +100,9 @@ export default function WhatChangedPage() {
         const data = await res.json()
 
         if (data.data && Array.isArray(data.data)) {
-          // Filter projects that have source URLs and transform to events
+          // Transform all projects to events (not just those with source URLs)
           const transformed: Event[] = data.data
-            .filter((p: any) => p.source_url) // Only show projects with source URLs
-            .slice(0, 20)
+            .slice(0, 100)
             .map((p: any) => {
               const ownerId = Array.isArray(p.owner) ? p.owner[0] : p.owner
               return {
