@@ -447,7 +447,7 @@ export default function ProjectsList() {
               <tr key={p.id} style={{ borderBottom: '1px solid #D6D9E8', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.background = '#F7F9FE'} onMouseLeave={(e) => e.currentTarget.style.background = '#FFFFFF'}>
                 <td style={{ padding: '0.6rem 0.8rem', verticalAlign: 'top', fontSize: '0.88rem' }}>
                   <a href={`/projects/${p.id}`} style={{ fontWeight: 600, color: '#376BE9', display: 'block', lineHeight: 1.3, textDecoration: 'none' }}>{p.name}</a>
-                  <span style={{ fontSize: '0.74rem', color: '#5A5D78', display: 'block', marginTop: '0.1rem' }}>{p.type}</span>
+                  <span style={{ fontSize: '0.74rem', color: '#1C0140', display: 'block', marginTop: '0.1rem', opacity: 0.8 }}>{p.type}</span>
                   {p.source_url && (
                     <a href={p.source_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.7rem', color: '#376BE9', textDecoration: 'none', marginTop: '0.2rem', display: 'block' }} onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'} onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}>
                       View source →

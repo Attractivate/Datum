@@ -339,11 +339,119 @@ export default function SearchPage() {
           )}
 
           {tab === 'projects' && (
-            <p style={{ color: '#666', padding: '2rem 0', textAlign: 'center' }}>Projects tab content — 89 project results matching "{search}"</p>
+            <div>
+              {results
+                .filter((r) => r.type === 'Project')
+                .map((result) => (
+                  <Link
+                    key={result.id}
+                    href={`/projects/${result.id}`}
+                    style={{ textDecoration: 'none' }}
+                  >
+                    <div
+                      style={{
+                        background: '#FFFFFF',
+                        border: '1px solid #e0e0e0',
+                        borderRadius: '6px',
+                        padding: '1.2rem',
+                        marginBottom: '1rem',
+                        transition: 'all 0.15s',
+                        cursor: 'pointer',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = '#376BE9'
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = '#e0e0e0'
+                        e.currentTarget.style.boxShadow = 'none'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '0.6rem' }}>
+                        <div style={{ color: '#376BE9', fontWeight: 600, fontSize: '1rem' }}>
+                          {result.title}
+                        </div>
+                        <span style={{ background: '#f0f0f0', color: '#666', padding: '0.25rem 0.6rem', borderRadius: '3px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.03em', whiteSpace: 'nowrap' }}>
+                          {result.type}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.85rem', color: '#666', marginBottom: '0.6rem' }}>
+                        {result.meta.map((m, i) => (
+                          <span key={i}>{m}</span>
+                        ))}
+                      </div>
+                      <div style={{ fontSize: '0.9rem', lineHeight: 1.5, color: '#1a1a1a', marginBottom: '0.8rem' }}>
+                        {result.desc}
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                        {result.tags.map((tag, i) => (
+                          <span key={i} style={{ background: '#f0f0f0', color: '#666', padding: '0.3rem 0.6rem', borderRadius: '3px', fontSize: '0.75rem' }}>
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+            </div>
           )}
 
           {tab === 'companies' && (
-            <p style={{ color: '#666', padding: '2rem 0', textAlign: 'center' }}>Companies tab content — 38 company results matching "{search}"</p>
+            <div>
+              {results
+                .filter((r) => r.type === 'Company')
+                .map((result) => (
+                  <Link
+                    key={result.id}
+                    href={`/companies/${result.id}`}
+                    style={{ textDecoration: 'none' }}
+                  >
+                    <div
+                      style={{
+                        background: '#FFFFFF',
+                        border: '1px solid #e0e0e0',
+                        borderRadius: '6px',
+                        padding: '1.2rem',
+                        marginBottom: '1rem',
+                        transition: 'all 0.15s',
+                        cursor: 'pointer',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = '#376BE9'
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = '#e0e0e0'
+                        e.currentTarget.style.boxShadow = 'none'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '0.6rem' }}>
+                        <div style={{ color: '#376BE9', fontWeight: 600, fontSize: '1rem' }}>
+                          {result.title}
+                        </div>
+                        <span style={{ background: '#f0f0f0', color: '#666', padding: '0.25rem 0.6rem', borderRadius: '3px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.03em', whiteSpace: 'nowrap' }}>
+                          {result.type}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.85rem', color: '#666', marginBottom: '0.6rem' }}>
+                        {result.meta.map((m, i) => (
+                          <span key={i}>{m}</span>
+                        ))}
+                      </div>
+                      <div style={{ fontSize: '0.9rem', lineHeight: 1.5, color: '#1a1a1a', marginBottom: '0.8rem' }}>
+                        {result.desc}
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                        {result.tags.map((tag, i) => (
+                          <span key={i} style={{ background: '#f0f0f0', color: '#666', padding: '0.3rem 0.6rem', borderRadius: '3px', fontSize: '0.75rem' }}>
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+            </div>
           )}
 
           {/* Pagination */}
