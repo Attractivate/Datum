@@ -70,6 +70,7 @@ export default function ProjectDetail({ params }: { params: Promise<{ id: string
   const { id } = use(params)
   const [project, setProject] = useState<Project | null>(null)
   const [contacts, setContacts] = useState<Contact[]>([])
+  const [companiesMap, setCompaniesMap] = useState<Record<string, any>>({})
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'updates' | 'milestones'>('updates')
 
@@ -99,6 +100,24 @@ export default function ProjectDetail({ params }: { params: Promise<{ id: string
     fetchProject()
   }, [id])
 
+  // Fetch companies to build companiesInvolved map
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        const res = await fetch('/api/companies?limit=10000')
+        const data = await res.json()
+        const map: Record<string, any> = {}
+        data.data?.forEach((c: any) => {
+          map[c.id] = c
+        })
+        setCompaniesMap(map)
+      } catch (error) {
+        console.error('Failed to fetch companies:', error)
+      }
+    }
+    fetchCompanies()
+  }, [])
+
   if (loading || !project) {
     return (
       <main style={{ maxWidth: '96rem', margin: '0 auto', padding: '1.4rem clamp(1rem, 3vw, 2rem) 5rem', display: 'flex', flexDirection: 'column', gap: '1.8rem' }}>
@@ -111,13 +130,8 @@ export default function ProjectDetail({ params }: { params: Promise<{ id: string
   const milestones = project.milestones || []
   const companies = project.companies || []
 
-  // Build companies list from project relationships if not provided
-  const companiesInvolved = companies.length > 0 ? companies : [
-    ...(project.owner ? (Array.isArray(project.owner) ? project.owner.map(o => ({ id: o, name: o, role: 'Owner' })) : [{ id: project.owner, name: project.owner, role: 'Owner' }]) : []),
-    ...(project.developer ? (Array.isArray(project.developer) ? project.developer.map(d => ({ id: d, name: d, role: 'Developer' })) : [{ id: project.developer, name: project.developer, role: 'Developer' }]) : []),
-    ...(project.epc ? (Array.isArray(project.epc) ? project.epc.map(e => ({ id: e, name: e, role: 'EPC' })) : [{ id: project.epc, name: project.epc, role: 'EPC' }]) : []),
-    ...(project.oem ? (Array.isArray(project.oem) ? project.oem.map(o => ({ id: o, name: o, role: 'OEM' })) : [{ id: project.oem, name: project.oem, role: 'OEM' }]) : []),
-  ].filter(c => c && c.name) // Remove empty entries
+  // Note: Companies will be loaded via API call in useEffect below
+  // For now, companiesInvolved will be empty until companies are fetched
 
   return (
     <main style={{ maxWidth: '96rem', margin: '0 auto', padding: '1.4rem clamp(1rem, 3vw, 2rem) 5rem', display: 'flex', flexDirection: 'column', gap: '1.8rem' }}>
@@ -326,17 +340,33 @@ export default function ProjectDetail({ params }: { params: Promise<{ id: string
               Companies Involved
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-              {companiesInvolved.length > 0 ? (
-                companiesInvolved.map((company, idx) => (
-                  <div key={`${company.id || company.name}-${idx}`} style={{ display: 'flex', flexDirection: 'column', padding: '0.6rem', borderRadius: '3px', background: '#F9FAFB', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = '#F0F4FF'} onMouseLeave={(e) => e.currentTarget.style.background = '#F9FAFB'}>
-                    <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#376BE9' }}>{company.name}</div>
-                    {company.role && (
-                      <div style={{ fontSize: '0.75rem', color: '#5A5D78', marginTop: '0.1rem' }}>
-                        {company.role}
-                      </div>
-                    )}
-                  </div>
-                ))
+              {project?.owner_id || project?.developer_id || project?.epc_id || project?.oem_id ? (
+                <>
+                  {project.owner_id && companiesMap[project.owner_id] && (
+                    <div style={{ display: 'flex', flexDirection: 'column', padding: '0.6rem', borderRadius: '3px', background: '#F9FAFB', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.background = '#F0F4FF'} onMouseLeave={(e) => e.currentTarget.style.background = '#F9FAFB'}>
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#376BE9' }}>{companiesMap[project.owner_id].name}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#5A5D78', marginTop: '0.1rem' }}>Owner</div>
+                    </div>
+                  )}
+                  {project.developer_id && companiesMap[project.developer_id] && (
+                    <div style={{ display: 'flex', flexDirection: 'column', padding: '0.6rem', borderRadius: '3px', background: '#F9FAFB', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.background = '#F0F4FF'} onMouseLeave={(e) => e.currentTarget.style.background = '#F9FAFB'}>
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#376BE9' }}>{companiesMap[project.developer_id].name}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#5A5D78', marginTop: '0.1rem' }}>Developer</div>
+                    </div>
+                  )}
+                  {project.epc_id && companiesMap[project.epc_id] && (
+                    <div style={{ display: 'flex', flexDirection: 'column', padding: '0.6rem', borderRadius: '3px', background: '#F9FAFB', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.background = '#F0F4FF'} onMouseLeave={(e) => e.currentTarget.style.background = '#F9FAFB'}>
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#376BE9' }}>{companiesMap[project.epc_id].name}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#5A5D78', marginTop: '0.1rem' }}>EPC</div>
+                    </div>
+                  )}
+                  {project.oem_id && companiesMap[project.oem_id] && (
+                    <div style={{ display: 'flex', flexDirection: 'column', padding: '0.6rem', borderRadius: '3px', background: '#F9FAFB', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.background = '#F0F4FF'} onMouseLeave={(e) => e.currentTarget.style.background = '#F9FAFB'}>
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#376BE9' }}>{companiesMap[project.oem_id].name}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#5A5D78', marginTop: '0.1rem' }}>OEM</div>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div style={{ fontSize: '0.9rem', color: '#5A5D78' }}>No companies assigned</div>
               )}
