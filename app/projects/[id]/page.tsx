@@ -54,10 +54,14 @@ interface Project {
   created_at?: string
   updated_at?: string
   owner?: string | string[]
+  owner_id?: string | null
   developer?: string | string[]
+  developer_id?: string | null
   developer_info?: string
   epc?: string | string[]
+  epc_id?: string | null
   oem?: string | string[]
+  oem_id?: string | null
   epc_award?: boolean | string
   oem_award?: boolean | string
   key_personnel?: string | string[]

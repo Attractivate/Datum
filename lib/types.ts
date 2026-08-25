@@ -41,12 +41,15 @@ export interface Project {
   stage: string
   status?: string
   owner?: string | string[]
+  owner_id?: string | null
   developer_id?: string | null
   developer?: string | string[]
   developer_info?: string
   epc?: string | string[] | null
+  epc_id?: string | null
   epc_award?: string | string[] | boolean | null
   oem?: string | string[] | null
+  oem_id?: string | null
   oem_award?: string | string[] | boolean | null
   key_personnel?: string | string[]
   first_seen_date?: string
