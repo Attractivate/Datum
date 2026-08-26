@@ -105,10 +105,11 @@ function findBestMatch(
 export async function scanForDuplicateCompanies(
   limit: number = 100
 ): Promise<Candidate[]> {
-  // Note: companies table doesn't have is_duplicate column, so we fetch all
+  // Fetch non-merged companies only
   const { data: companies, error } = await supabase
     .from('companies')
     .select('id, name, industry, location')
+    .or('is_duplicate.is.null,is_duplicate.eq.false')
 
   console.log('[Company Dedup] Fetch result - error:', error, 'count:', companies?.length)
 
@@ -185,9 +186,13 @@ export async function mergeCompanies(
 
     if (updateError) throw new Error(`Company role update failed: ${updateError.message}`)
 
-    // Note: Companies table doesn't have is_duplicate column like projects do
-    // Company merges are tracked through the company_roles reassignment above
-    // No additional archival needed
+    // Mark duplicate as merged
+    const { error: archiveError } = await supabase
+      .from('companies')
+      .update({ is_duplicate: true })
+      .eq('id', duplicateId)
+
+    if (archiveError) throw new Error(`Failed to mark company as merged: ${archiveError.message}`)
 
     console.log(`[Company Dedup] Successfully merged ${duplicateId} into ${canonicalId}`)
     return { success: true }
