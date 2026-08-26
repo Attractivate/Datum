@@ -33,11 +33,12 @@ export async function GET(request: Request) {
         if (indByName?.id) {
           query = query.eq('industry_id', indByName.id)
         } else {
-          // Try by slug
+          // Try by slug with wildcard matching
+          const slugPattern = industry.toLowerCase().replace(/\s+/g, '-')
           const { data: indBySlug } = await supabase
             .from('industries')
             .select('id')
-            .eq('slug', industry.toLowerCase().replace(/\s+/g, '-'))
+            .ilike('slug', `${slugPattern}%`)
             .single()
 
           if (indBySlug?.id) {
