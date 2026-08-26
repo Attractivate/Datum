@@ -106,9 +106,10 @@ export default function ProjectsList() {
     return industryKey
   }
 
-  const inBand = (value: number, band: string) => {
+  const inBand = (value: number | null | undefined, band: string) => {
     if (band === 'all') return true
-    if (value === 0) return false
+    // If no value, only match if filtering is not active
+    if (!value || value === 0) return false
     const [lo, hi] = band.split('-').map(x => x === '' ? Infinity : parseFloat(x))
     return value >= lo && value < hi
   }
