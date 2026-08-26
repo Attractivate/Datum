@@ -67,6 +67,13 @@ function levenshteinDistance(s1: string, s2: string): number {
 }
 
 /**
+ * Extract base name (before comma or parenthesis)
+ */
+function extractBaseName(name: string): string {
+  return name.split(/[,\(]/)[0].toLowerCase().trim()
+}
+
+/**
  * Calculate similarity percentage (0-1) using Jaro-Winkler
  */
 function nameSimilarity(s1: string, s2: string): number {
@@ -75,8 +82,14 @@ function nameSimilarity(s1: string, s2: string): number {
 
   if (s1Lower === s2Lower) return 1.0
 
-  const maxLen = Math.max(s1Lower.length, s2Lower.length)
-  const distance = levenshteinDistance(s1Lower, s2Lower)
+  // Try comparing base names first (before comma or parenthesis)
+  const s1Base = extractBaseName(s1)
+  const s2Base = extractBaseName(s2)
+
+  if (s1Base === s2Base) return 1.0
+
+  const maxLen = Math.max(s1Base.length, s2Base.length)
+  const distance = levenshteinDistance(s1Base, s2Base)
   const similarity = 1 - distance / maxLen
 
   return Math.max(0, Math.min(1, similarity))
