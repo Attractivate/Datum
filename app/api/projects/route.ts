@@ -1,46 +1,25 @@
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { getProjects } from '@/lib/db'
+import type { ProjectFilters } from '@/lib/types'
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
 
-    // Fetch all projects from Supabase (single source of truth)
-    let query = supabase.from('projects').select('*', { count: 'exact' })
-
-    // Apply filters
-    if (searchParams.get('search')) {
-      const search = searchParams.get('search')!
-      query = query.ilike('name', `%${search}%`)
+    const filters: ProjectFilters = {
+      industry: searchParams.get('industry') || undefined,
+      type: searchParams.get('type') || undefined,
+      stage: searchParams.get('stage') || undefined,
+      state: searchParams.get('state') || undefined,
+      capacity: searchParams.get('capacity') || undefined,
+      search: searchParams.get('search') || undefined,
     }
 
-    if (searchParams.get('stage')) {
-      query = query.eq('stage', searchParams.get('stage'))
-    }
-
-    if (searchParams.get('state')) {
-      const state = searchParams.get('state')
-      query = query.ilike('location', `%${state}%`)
-    }
-
-    // Fetch all projects (no limit)
-    const { data: projects, count } = await query.order('name')
-
-    // Filter for verified projects (those with at least one company role)
-    const verified = searchParams.get('verified') !== 'false'
-    const filteredProjects = verified
-      ? (projects || []).filter(p => p.owner_id || p.developer_id || p.epc_id || p.oem_id)
-      : (projects || [])
+    const projects = await getProjects(filters)
 
     return Response.json({
       success: true,
-      data: filteredProjects,
-      count: filteredProjects.length,
-      total: count,
+      data: projects,
+      count: projects.length,
     })
   } catch (error) {
     console.error('Error fetching projects:', error)
