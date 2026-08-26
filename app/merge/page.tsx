@@ -66,14 +66,12 @@ export default function MergePage() {
       return
     }
 
-    // Prevent merging if source record is already marked as duplicate
-    if ('is_duplicate' in selectedSource && selectedSource.is_duplicate) {
-      setMessage('⚠️ Error: Source record is already marked as a duplicate. Please select a different source record.')
-      return
-    }
-
-    if ('is_duplicate' in selectedDuplicate && !selectedDuplicate.is_duplicate) {
-      setMessage('⚠️ Warning: Duplicate record should be marked as duplicate. Proceeding anyway...')
+    // Prevent merging if source record is already marked as duplicate (projects only)
+    if (recordType === 'projects') {
+      if ('is_duplicate' in selectedSource && selectedSource.is_duplicate) {
+        setMessage('⚠️ Error: Source record is already marked as a duplicate. Please select a different source record.')
+        return
+      }
     }
 
     setLoading(true)
