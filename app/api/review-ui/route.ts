@@ -78,12 +78,12 @@ export async function GET() {
           })
         });
 
-        if (res.ok) {
-          alert(\`✓ Merged!\`);
+        const data = await res.json();
+        if (res.ok || data.success) {
           currentIndex++;
           render();
         } else {
-          alert('Error merging');
+          alert('Error: ' + (data.error || 'Unknown error'));
         }
       } catch (e) {
         console.error(e);
