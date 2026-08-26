@@ -1,6 +1,5 @@
 export async function GET() {
-  const html = `
-<!DOCTYPE html>
+  const html = `<!DOCTYPE html>
 <html>
 <head>
   <title>Review Duplicates - Datum</title>
@@ -9,47 +8,52 @@ export async function GET() {
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: system-ui, -apple-system, sans-serif; background: #f3f4f6; color: #333; }
-    .container { max-width: 1280px; margin: 0 auto; padding: 32px; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 32px; }
     h1 { font-size: 30px; font-weight: bold; margin-bottom: 8px; }
-    .subtitle { color: #666; margin-bottom: 32px; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 32px; }
-    .card { padding: 24px; border: 2px solid; border-radius: 8px; }
-    .card-keep { background: #dcfce7; border-color: #22c55e; }
-    .card-merge { background: #fee2e2; border-color: #ef4444; }
-    .card h2 { font-weight: bold; margin-bottom: 16px; font-size: 16px; }
-    .card-keep h2 { color: #166534; }
-    .card-merge h2 { color: #991b1b; }
-    .project-name { font-size: 20px; font-weight: bold; margin-bottom: 8px; }
-    .project-location { font-size: 14px; color: #666; margin-bottom: 8px; }
-    .match-info { font-size: 12px; color: #666; margin-top: 16px; }
+    .subtitle { color: #666; margin-bottom: 16px; }
     .tabs { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 2px solid #e5e7eb; }
     .tab { padding: 12px 16px; border: none; background: transparent; cursor: pointer; font-size: 14px; font-weight: 500; color: #666; border-bottom: 3px solid transparent; margin-bottom: -2px; }
     .tab.active { color: #000; border-bottom-color: #3b82f6; }
-    .buttons { display: flex; gap: 16px; margin-bottom: 32px; }
-    button { padding: 16px 24px; font-size: 16px; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; flex: 1; }
-    .btn-merge { background: #22c55e; color: white; }
-    .btn-merge:hover { background: #16a34a; }
-    .btn-skip { background: #9ca3af; color: white; }
-    .btn-skip:hover { background: #6b7280; }
-    .btn-do-not-merge { background: #ef4444; color: white; }
-    .btn-do-not-merge:hover { background: #dc2626; }
-    .btn-load { background: #3b82f6; color: white; width: 100%; }
-    .btn-load:hover { background: #2563eb; }
-    .loading { padding: 32px; }
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    thead { background: #f9fafb; border-bottom: 2px solid #e5e7eb; }
+    th { padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: #666; }
+    td { padding: 12px 16px; border-bottom: 1px solid #f3f4f6; }
+    tr:hover { background: #f9fafb; }
+    .name-col { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .location-col { max-width: 150px; color: #666; font-size: 13px; }
+    .reason-col { font-size: 12px; color: #666; }
+    .score-col { text-align: center; font-weight: 500; }
+    .radio-group { display: flex; gap: 12px; align-items: center; }
+    .radio-group label { display: flex; align-items: center; gap: 4px; font-size: 13px; cursor: pointer; margin: 0; }
+    .radio-group input { margin: 0; cursor: pointer; }
+    .controls { display: flex; gap: 16px; margin-top: 32px; }
+    button { padding: 12px 24px; font-size: 14px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; }
+    .btn-save { background: #22c55e; color: white; flex: 1; }
+    .btn-save:hover { background: #16a34a; }
+    .btn-save:disabled { background: #9ca3af; cursor: not-allowed; }
+    .btn-reload { background: #3b82f6; color: white; }
+    .btn-reload:hover { background: #2563eb; }
+    .loading { padding: 32px; text-align: center; color: #666; }
     .error { padding: 32px; color: #dc2626; }
+    .stats { color: #666; font-size: 13px; margin-bottom: 16px; }
   </style>
 </head>
 <body>
   <div id="app"></div>
   <script>
     let candidates = [];
-    let currentIndex = 0;
-    let activeTab = 'projects'; // 'projects' or 'companies'
+    let activeTab = 'projects';
+    let selections = {};
+    let saveInProgress = false;
 
     async function loadCandidates(type) {
+      activeTab = type;
+      selections = {};
       const endpoint = type === 'projects' ? '/api/scan' : '/api/scan-companies';
+      const app = document.getElementById('app');
+      app.innerHTML = '<div class="container"><div class="loading">Loading candidates...</div></div>';
+
       try {
-        document.getElementById('app').innerHTML = '<div class="container"><div class="loading">Loading candidates...</div></div>';
         const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -57,136 +61,117 @@ export async function GET() {
         });
         const data = await res.json();
         candidates = data.candidates || [];
-        currentIndex = 0;
         render();
       } catch (e) {
         console.error(e);
-        document.getElementById('app').innerHTML = \`<div class="container"><div class="error">Error: \${e.message}</div></div>\`;
+        app.innerHTML = '<div class="container"><div class="error">Error: ' + e.message + '</div></div>';
       }
     }
 
-    async function merge() {
-      if (currentIndex >= candidates.length) return;
+    function updateSelection(index, action) {
+      selections[index] = action;
+    }
 
-      const c = candidates[currentIndex];
-      const endpoint = activeTab === 'projects' ? '/api/merge' : '/api/merge-companies';
+    async function saveAll() {
+      const actions = Object.entries(selections);
+      if (actions.length === 0) {
+        alert('No selections made');
+        return;
+      }
 
-      try {
-        const res = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'merge',
-            canonical_project_id: c.canonical.id,
-            duplicate_project_id: c.duplicate.id,
-            merged_by: 'user'
-          })
-        });
+      saveInProgress = true;
+      document.getElementById('save-btn').disabled = true;
+      let completed = 0;
+      let errors = [];
 
-        const data = await res.json();
-        if (res.ok || data.success) {
-          currentIndex++;
-          render();
-        } else {
-          alert('Error: ' + (data.error || 'Unknown error'));
+      for (const [index, action] of actions) {
+        const idx = parseInt(index);
+        const c = candidates[idx];
+
+        try {
+          if (action === 'skip') continue;
+
+          const endpoint = activeTab === 'projects' ?
+            (action === 'merge' ? '/api/merge' : '/api/mark-do-not-merge') :
+            (action === 'merge' ? '/api/merge-companies' : '/api/mark-do-not-merge');
+
+          const body = action === 'merge' ?
+            { action: 'merge', canonical_project_id: c.canonical.id, duplicate_project_id: c.duplicate.id, merged_by: 'user' } :
+            { type: activeTab, id1: c.canonical.id, id2: c.duplicate.id };
+
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+
+          if (res.ok) {
+            completed++;
+          } else {
+            const data = await res.json();
+            errors.push('Row ' + (idx + 1) + ': ' + (data.error || 'Unknown error'));
+          }
+        } catch (e) {
+          errors.push('Row ' + (idx + 1) + ': ' + e.message);
         }
-      } catch (e) {
-        console.error(e);
-        alert('Error: ' + e.message);
       }
-    }
 
-    async function doNotMerge() {
-      if (currentIndex >= candidates.length) return;
-      const c = candidates[currentIndex];
+      saveInProgress = false;
+      document.getElementById('save-btn').disabled = false;
 
-      try {
-        await fetch(\`\${API_BASE}/api/mark-do-not-merge\`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: activeTab,
-            id1: c.canonical.id,
-            id2: c.duplicate.id
-          })
-        });
-
-        currentIndex++;
-        render();
-      } catch (e) {
-        console.error(e);
-        alert('Error: ' + e.message);
+      if (errors.length > 0) {
+        alert('Saved ' + completed + ' / ' + actions.length + '\\n\\nErrors:\\n' + errors.slice(0, 5).join('\\n'));
+      } else {
+        alert('Successfully saved ' + completed + ' actions!');
       }
-    }
 
-    function skip() {
-      currentIndex++;
-      render();
+      selections = {};
+      await loadCandidates(activeTab);
     }
 
     function render() {
       const app = document.getElementById('app');
-
-      const c = candidates[currentIndex];
       const typeLabel = activeTab === 'projects' ? 'Projects' : 'Companies';
-      const isLoading = candidates.length === 0;
 
-      app.innerHTML = \`
-        <div class="container">
-          <h1>Review Duplicates</h1>
-          <div class="subtitle">Find and merge duplicate entries</div>
+      if (candidates.length === 0) {
+        app.innerHTML = '<div class="container"><h1>Review Duplicates</h1><div class="subtitle">Find and merge duplicate entries</div><div class="tabs"><button class="tab active" onclick="loadCandidates(' + "'projects'" + ')">📊 Projects</button><button class="tab" onclick="loadCandidates(' + "'companies'" + ')">🏢 Companies</button></div><div style="padding: 32px; text-align: center; color: #666;">No duplicates found to review</div></div>';
+        return;
+      }
 
-          <div class="tabs">
-            <button class="tab \${activeTab === 'projects' ? 'active' : ''}" onclick="switchTab('projects')">📊 Projects</button>
-            <button class="tab \${activeTab === 'companies' ? 'active' : ''}" onclick="switchTab('companies')">🏢 Companies</button>
-          </div>
+      let html = '<div class="container"><h1>Review Duplicates</h1><div class="subtitle">Select an action for each duplicate pair, then click Save</div>';
+      html += '<div class="tabs">';
+      html += '<button class="tab ' + (activeTab === 'projects' ? 'active' : '') + '" onclick="loadCandidates(' + "'projects'" + ')">📊 Projects</button>';
+      html += '<button class="tab ' + (activeTab === 'companies' ? 'active' : '') + '" onclick="loadCandidates(' + "'companies'" + ')">🏢 Companies</button>';
+      html += '</div>';
+      html += '<div class="stats">' + typeLabel + ' • ' + candidates.length + ' duplicates found</div>';
+      html += '<table><thead><tr><th style="width: 35%">Canonical</th><th style="width: 35%">Duplicate</th><th style="width: 15%">Match</th><th style="width: 15%">Action</th></tr></thead><tbody>';
 
-          \${isLoading ? \`
-            <div style="padding: 32px; text-align: center; color: #666;">
-              <p>Click a tab above to load duplicates to review</p>
-            </div>
-          \` : \`
-            <p class="subtitle" style="margin-top: 16px;">\${typeLabel} • \${currentIndex + 1} of \${candidates.length}</p>
+      for (let i = 0; i < candidates.length; i++) {
+        const c = candidates[i];
+        const selected = selections[i] || 'skip';
+        html += '<tr><td><div class="name-col" title="' + c.canonical.name + '">' + c.canonical.name + '</div><div class="location-col">' + (c.canonical.location || '—') + '</div></td>';
+        html += '<td><div class="name-col" title="' + c.duplicate.name + '">' + c.duplicate.name + '</div><div class="location-col">' + (c.duplicate.location || '—') + '</div></td>';
+        html += '<td><div class="reason-col">' + c.match_reason + '</div><div class="score-col">' + Math.round(c.confidence_score * 100) + '%</div></td>';
+        html += '<td><div class="radio-group">';
+        html += '<label><input type="radio" name="action-' + i + '" value="merge" ' + (selected === 'merge' ? 'checked' : '') + ' onchange="updateSelection(' + i + ', ' + "'merge'" + ')"> Merge</label>';
+        html += '<label><input type="radio" name="action-' + i + '" value="skip" ' + (selected === 'skip' ? 'checked' : '') + ' onchange="updateSelection(' + i + ', ' + "'skip'" + ')"> Skip</label>';
+        html += '<label><input type="radio" name="action-' + i + '" value="do-not-merge" ' + (selected === 'do-not-merge' ? 'checked' : '') + ' onchange="updateSelection(' + i + ', ' + "'do-not-merge'" + ')"> Don' + "'t Merge</label>';
+        html += '</div></td></tr>';
+      }
 
-            <div class="grid">
-              <div class="card card-keep">
-                <h2>✓ KEEP THIS</h2>
-                <div class="project-name">\${c.canonical.name}</div>
-                <div class="project-location">\${c.canonical.location || '—'}</div>
-              </div>
-              <div class="card card-merge">
-                <h2>✗ MERGE INTO LEFT</h2>
-                <div class="project-name">\${c.duplicate.name}</div>
-                <div class="project-location">\${c.duplicate.location || '—'}</div>
-                <div class="match-info">\${c.match_reason} (\${(c.confidence_score*100).toFixed(0)}%)</div>
-              </div>
-            </div>
+      html += '</tbody></table>';
+      html += '<div class="controls">';
+      html += '<button class="btn-save" id="save-btn" onclick="saveAll()" ' + (saveInProgress ? 'disabled' : '') + '>💾 Save All Selections</button>';
+      html += '<button class="btn-reload" onclick="loadCandidates(' + "'" + activeTab + "'" + ')">🔄 Reload</button>';
+      html += '</div></div>';
 
-            <div class="buttons">
-              <button onclick="merge()" class="btn-merge">✓ MERGE</button>
-              <button onclick="skip()" class="btn-skip">SKIP</button>
-              <button onclick="doNotMerge()" class="btn-do-not-merge">✗ DO NOT MERGE</button>
-            </div>
-          \`}
-        </div>
-      \`;
+      app.innerHTML = html;
     }
 
-    function switchTab(tab) {
-      activeTab = tab;
-      loadCandidates(tab);
-    }
-
-    function load() {
-      loadCandidates(activeTab);
-    }
-
-    // Initial load
     loadCandidates('projects');
   </script>
 </body>
-</html>
-  `;
+</html>`;
 
   return new Response(html, {
     headers: { 'Content-Type': 'text/html' }
