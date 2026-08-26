@@ -6,7 +6,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
-import { scanForDuplicates, recordCandidates } from '@/lib/deduplication'
+import { scanForDuplicates, recordCandidates } from '../../../lib/deduplication'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,

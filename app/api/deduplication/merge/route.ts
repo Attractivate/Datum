@@ -3,7 +3,7 @@
  * Execute merge of duplicate project into canonical
  */
 
-import { mergeDuplicateProject, rollbackMerge } from '@/lib/deduplication'
+import { mergeDuplicateProject, rollbackMerge } from '../../../../lib/deduplication'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
