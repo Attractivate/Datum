@@ -16,8 +16,24 @@ export async function GET(request: Request) {
 
     let query = supabase.from('projects').select('*')
 
+    // Map industry slug/name to UUID if provided
     if (industry && industry !== 'all') {
-      query = query.eq('industry_id', industry)
+      // If it looks like a UUID, use directly; otherwise look it up
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(industry)
+      if (isUUID) {
+        query = query.eq('industry_id', industry)
+      } else {
+        // Try to look up by slug
+        const { data: industries } = await supabase
+          .from('industries')
+          .select('id')
+          .eq('slug', industry)
+          .single()
+
+        if (industries?.id) {
+          query = query.eq('industry_id', industries.id)
+        }
+      }
     }
 
     if (stage && stage !== 'all') {
