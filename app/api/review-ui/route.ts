@@ -85,8 +85,8 @@ export async function GET() {
 
         const data = await res.json();
         if (res.ok || data.success) {
-          currentIndex++;
-          render();
+          // Reload candidates to skip merged items
+          await loadCandidates(activeTab);
         } else {
           alert('Error: ' + (data.error || 'Unknown error'));
         }
@@ -111,8 +111,8 @@ export async function GET() {
           })
         });
 
-        currentIndex++;
-        render();
+        // Reload candidates to exclude ignored pairs
+        await loadCandidates(activeTab);
       } catch (e) {
         console.error(e);
         alert('Error: ' + e.message);
