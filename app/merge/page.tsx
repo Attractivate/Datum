@@ -95,7 +95,7 @@ export default function MergePage() {
   return (
     <div className="max-w-4xl mx-auto p-8">
       <h1 className="text-3xl font-bold mb-2">Merge Records</h1>
-      <p className="text-gray-600 mb-8">Select source record to keep and duplicate record to merge</p>
+      <p className="text-gray-600 mb-8">Select source record to keep and duplicate record to merge into it</p>
 
       {/* Record Type Selector */}
       <div className="mb-8 flex gap-4">
