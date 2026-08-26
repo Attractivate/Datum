@@ -113,20 +113,9 @@ function findBestMatch(
     return { score: 0.80, reason: 'name_high_similarity' }
   }
 
-  // Tier 4: Similar name (75%+) + same company
+  // Tier 4: Similar name (75%+) alone is suspicious enough
   if (nameSim >= 0.75) {
-    const sameOwner =
-      canonical.owner_id &&
-      duplicate.owner_id &&
-      canonical.owner_id === duplicate.owner_id
-    const sameDeveloper =
-      canonical.developer_id &&
-      duplicate.developer_id &&
-      canonical.developer_id === duplicate.developer_id
-
-    if (sameOwner || sameDeveloper) {
-      return { score: 0.78, reason: 'name_similar_same_company' }
-    }
+    return { score: 0.75, reason: 'name_similar_75_percent' }
   }
 
   // Tier 5: Same company (if available) + location
