@@ -187,7 +187,7 @@ async function getProjectDataSummary(projectId: string) {
 }
 
 /**
- * Scan for duplicate projects
+ * Scan for duplicate projects using indexed matching
  * @param minConfidence Minimum confidence score (0.6-0.99)
  * @param limit Maximum candidates to return
  */
@@ -197,7 +197,7 @@ export async function scanForDuplicates(
 ): Promise<DeduplicationCandidate[]> {
   console.log(`[Dedup] Scanning for duplicates (confidence >= ${minConfidence})`)
 
-  // Fetch all projects (scan all, filter will be applied after matching)
+  // Fetch all projects
   const { data: projects, error } = await supabase
     .from('projects')
     .select('id, name, location, state, capacity_mw, developer_id, owner_id')
@@ -208,41 +208,55 @@ export async function scanForDuplicates(
   }
 
   console.log(`[Dedup] Scanning ${projects.length} projects`)
-  if (projects.length > 0) {
-    console.log('[Dedup] Sample project:', JSON.stringify(projects[0], null, 2))
-  }
 
   const candidates: DeduplicationCandidate[] = []
   const seenPairs = new Set<string>()
 
-  // Compare each project pair and find ALL matches (even low-confidence ones)
-  // User will review and approve/reject each
-  for (let i = 0; i < projects.length; i++) {
-    for (let j = i + 1; j < projects.length; j++) {
-      const p1 = projects[i]
-      const p2 = projects[j]
+  // Build index by first word of base name for faster lookup
+  const nameIndex = new Map<string, Project[]>()
 
-      const pairKey = [p1.id, p2.id].sort().join('|')
-      if (seenPairs.has(pairKey)) continue
-      seenPairs.add(pairKey)
+  for (const p of projects) {
+    const baseName = extractBaseName(p.name)
+    const firstWord = baseName.split(/\s+/)[0]
 
-      const match = findBestMatch(p1, p2)
-      // Include ALL matches found, even below minConfidence
-      // User reviews and decides
-      if (!match) continue
-
-      const dataSummary = await getProjectDataSummary(p1.id)
-
-      candidates.push({
-        canonical: p1,
-        duplicate: p2,
-        confidence_score: match.score,
-        match_reason: match.reason,
-        data_summary: dataSummary
-      })
-
-      if (candidates.length >= limit) break
+    if (!nameIndex.has(firstWord)) {
+      nameIndex.set(firstWord, [])
     }
+    nameIndex.get(firstWord)!.push(p)
+  }
+
+  // Only compare projects with similar first words
+  const processedWords = new Set<string>()
+
+  for (const [firstWord, projectsWithWord] of nameIndex) {
+    if (processedWords.has(firstWord)) continue
+    processedWords.add(firstWord)
+
+    // Compare within this group
+    for (let i = 0; i < projectsWithWord.length && candidates.length < limit; i++) {
+      for (let j = i + 1; j < projectsWithWord.length && candidates.length < limit; j++) {
+        const p1 = projectsWithWord[i]
+        const p2 = projectsWithWord[j]
+
+        const pairKey = [p1.id, p2.id].sort().join('|')
+        if (seenPairs.has(pairKey)) continue
+        seenPairs.add(pairKey)
+
+        const match = findBestMatch(p1, p2)
+        if (!match) continue
+
+        const dataSummary = await getProjectDataSummary(p1.id)
+
+        candidates.push({
+          canonical: p1,
+          duplicate: p2,
+          confidence_score: match.score,
+          match_reason: match.reason,
+          data_summary: dataSummary
+        })
+      }
+    }
+
     if (candidates.length >= limit) break
   }
 
