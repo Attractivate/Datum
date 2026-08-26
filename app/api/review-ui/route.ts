@@ -101,7 +101,7 @@ export async function GET() {
       const c = candidates[currentIndex];
 
       try {
-        await fetch(\`\${API_BASE}/api/mark-do-not-merge\`, {
+        await fetch('/api/mark-do-not-merge', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
