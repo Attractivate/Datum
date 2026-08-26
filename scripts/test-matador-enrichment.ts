@@ -257,10 +257,8 @@ async function testMatadorEnrichment() {
   console.log('Updates:', enrichmentPayload.updates.length)
 
   try {
-    // Determine endpoint based on environment
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://datum-lake.vercel.app`
-      : 'http://localhost:3000'
+    // Always target production Vercel
+    const baseUrl = 'https://datum-lake.vercel.app'
 
     console.log(`\n🚀 Sending POST request to ${baseUrl}/api/enrich...\n`)
 
