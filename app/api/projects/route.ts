@@ -60,9 +60,7 @@ export async function GET(request: Request) {
       query = query.eq('type', type)
     }
 
-    if (capacity && capacity !== 'all') {
-      query = query.eq('capacity_unit', capacity)
-    }
+    // Capacity filtering is done client-side to handle range bands properly
 
     const { data: projects, error } = await query.order('name')
 
