@@ -35,7 +35,29 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       data = airtableData
     }
 
-    return Response.json({ success: true, data })
+    // Fetch associated companies
+    const companies: any[] = []
+    if (data.developer_id) {
+      const { data: devCompany } = await supabase
+        .from('companies')
+        .select('*')
+        .eq('id', data.developer_id)
+        .single()
+
+      if (devCompany) companies.push({ ...devCompany, role: 'developer' })
+    }
+
+    if (data.owner_id && data.owner_id !== data.developer_id) {
+      const { data: ownerCompany } = await supabase
+        .from('companies')
+        .select('*')
+        .eq('id', data.owner_id)
+        .single()
+
+      if (ownerCompany) companies.push({ ...ownerCompany, role: 'owner' })
+    }
+
+    return Response.json({ success: true, data, companies })
   } catch (error) {
     console.error('Error fetching project:', error)
     return Response.json(

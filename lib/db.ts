@@ -447,30 +447,14 @@ export async function getCompanyByAirtableId(airtableId: string) {
 // Get projects for a company (from Airtable)
 export async function getProjectsByCompanyId(companyId: string) {
   try {
-    const projects = await getProjects()
-    console.log(`[getProjectsByCompanyId] Total projects to filter: ${projects.length}`)
+    const { data: projects } = await supabase
+      .from('projects')
+      .select('id, name, stage, capacity_mw, location, first_seen_date')
+      .or(`developer_id.eq.${companyId},owner_id.eq.${companyId}`)
 
-    const filteredProjects = projects.filter((project: Project) => {
-      const checkField = (field: any) => {
-        if (!field) return false
-        if (Array.isArray(field)) {
-          return field.includes(companyId)
-        }
-        return field === companyId
-      }
-      return checkField(project.owner) || checkField(project.epc) || checkField(project.oem) || checkField(project.developer)
-    })
+    console.log(`[getProjectsByCompanyId] Found ${projects?.length || 0} projects for company ${companyId}`)
 
-    console.log(`[getProjectsByCompanyId] Filtered to ${filteredProjects.length} projects for company ${companyId}`)
-
-    return filteredProjects.map((p: Project) => ({
-      id: p.id,
-      name: p.name,
-      stage: p.stage,
-      capacity_mw: p.capacity_mw,
-      location: p.location,
-      first_seen_date: p.first_seen_date,
-    }))
+    return projects || []
   } catch (error) {
     console.error('Error fetching projects for company:', error)
     return []
