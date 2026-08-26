@@ -118,9 +118,26 @@ function findBestMatch(
     return { score: 0.80, reason: 'name_high_similarity' }
   }
 
-  // Tier 3: Similar name (75%+) alone is suspicious enough
-  if (nameSim >= 0.75) {
-    return { score: 0.75, reason: 'name_similar_75_percent' }
+  // Tier 3: Similar name (70%+) alone is worth reviewing
+  if (nameSim >= 0.70) {
+    return { score: 0.70, reason: 'name_similar_70_percent' }
+  }
+
+  // Tier 4: If base names share the same first 2+ words, could be same project
+  const canBase = extractBaseName(canonical.name).split(/\s+/)
+  const dupBase = extractBaseName(duplicate.name).split(/\s+/)
+  const minWords = Math.min(2, canBase.length, dupBase.length)
+
+  let sameFirstWords = true
+  for (let i = 0; i < minWords; i++) {
+    if (canBase[i] !== dupBase[i]) {
+      sameFirstWords = false
+      break
+    }
+  }
+
+  if (sameFirstWords && minWords >= 2) {
+    return { score: 0.68, reason: 'same_first_words' }
   }
 
   // Tier 4: Same company (if available) + location
