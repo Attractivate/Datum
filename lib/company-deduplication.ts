@@ -108,6 +108,7 @@ export async function scanForDuplicateCompanies(
   const { data: companies, error } = await supabase
     .from('companies')
     .select('id, name, industry, location')
+    .or('is_duplicate.is.false,is_duplicate.is.null')
 
   if (error || !companies) {
     console.error('[Company Dedup] Failed to fetch companies:', error)

@@ -197,10 +197,11 @@ export async function scanForDuplicates(
 ): Promise<DeduplicationCandidate[]> {
   console.log(`[Dedup] Scanning for duplicates (confidence >= ${minConfidence})`)
 
-  // Fetch all projects
+  // Fetch all unmerged projects
   const { data: projects, error } = await supabase
     .from('projects')
     .select('id, name, location, state, capacity_mw, developer_id, owner_id')
+    .or('is_duplicate.is.false,is_duplicate.is.null')
 
   if (error || !projects) {
     console.error('[Dedup] Failed to fetch projects:', error)
