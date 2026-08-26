@@ -52,17 +52,33 @@ export async function GET(request: Request) {
       query = query.eq('capacity_unit', capacity)
     }
 
-    const { data, error } = await query.order('name')
+    const { data: projects, error } = await query.order('name')
 
     if (error) {
       console.error('Supabase error:', error)
       return Response.json({ success: true, data: [], count: 0 })
     }
 
+    // Fetch industries to map industry_id to name
+    const { data: industries } = await supabase
+      .from('industries')
+      .select('id, name')
+
+    const industryMap: Record<string, string> = {}
+    industries?.forEach(ind => {
+      industryMap[ind.id] = ind.name
+    })
+
+    // Add industryRaw field to each project
+    const enrichedProjects = (projects || []).map(p => ({
+      ...p,
+      industryRaw: p.industry_id ? industryMap[p.industry_id] : null,
+    }))
+
     return Response.json({
       success: true,
-      data: data || [],
-      count: (data || []).length,
+      data: enrichedProjects,
+      count: enrichedProjects.length,
     })
   } catch (e) {
     console.error('API error:', e)
