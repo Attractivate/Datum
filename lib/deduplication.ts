@@ -263,6 +263,9 @@ export async function scanForDuplicates(
   }
 
   console.log(`[Dedup] Scanning ${projects.length} projects`)
+  if (projects.length > 0) {
+    console.log('[Dedup] Sample project:', JSON.stringify(projects[0], null, 2))
+  }
 
   const candidates: DeduplicationCandidate[] = []
   const seenPairs = new Set<string>()
