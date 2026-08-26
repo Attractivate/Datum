@@ -124,7 +124,8 @@ export default function ProjectsList() {
       const matchPast = !filters.past || p.past_due
       const matchReview = !filters.review || p.needs_review
       const matchType = filters.type === 'all' || (p.industryRaw && p.industryRaw.includes(` - ${filters.type}`))
-      return matchSearch && matchCapacity && matchStage && matchState && matchPast && matchReview && matchType
+      const matchIndustry = filters.ind === 'all' || (p.industryRaw && p.industryRaw.startsWith(filters.ind))
+      return matchSearch && matchCapacity && matchStage && matchState && matchPast && matchReview && matchType && matchIndustry
     })
   }, [projects, search, filters])
 
