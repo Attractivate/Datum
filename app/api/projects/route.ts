@@ -16,22 +16,33 @@ export async function GET(request: Request) {
 
     let query = supabase.from('projects').select('*')
 
-    // Map industry slug/name to UUID if provided
+    // Map industry name/slug to UUID if provided
     if (industry && industry !== 'all') {
-      // If it looks like a UUID, use directly; otherwise look it up
+      // If it looks like a UUID, use directly; otherwise look it up by name
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(industry)
       if (isUUID) {
         query = query.eq('industry_id', industry)
       } else {
-        // Try to look up by slug
-        const { data: industries } = await supabase
+        // Try to look up by name first, then by slug
+        const { data: indByName } = await supabase
           .from('industries')
           .select('id')
-          .eq('slug', industry)
+          .ilike('name', industry)
           .single()
 
-        if (industries?.id) {
-          query = query.eq('industry_id', industries.id)
+        if (indByName?.id) {
+          query = query.eq('industry_id', indByName.id)
+        } else {
+          // Try by slug
+          const { data: indBySlug } = await supabase
+            .from('industries')
+            .select('id')
+            .eq('slug', industry.toLowerCase().replace(/\s+/g, '-'))
+            .single()
+
+          if (indBySlug?.id) {
+            query = query.eq('industry_id', indBySlug.id)
+          }
         }
       }
     }
