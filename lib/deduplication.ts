@@ -319,9 +319,6 @@ export async function recordCandidates(
   const { error } = await supabase
     .from('project_deduplication')
     .insert(records)
-    .on('*', payload => {
-      console.log('[Dedup] Record inserted:', payload)
-    })
 
   if (error) {
     console.error('[Dedup] Failed to record candidates:', error)
