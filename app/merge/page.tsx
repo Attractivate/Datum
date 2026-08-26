@@ -30,10 +30,15 @@ export default function MergePage() {
 
     setSearcing(true)
     try {
-      const endpoint = recordType === 'projects' ? '/api/projects' : '/api/companies'
-      const res = await fetch(`${endpoint}?search=${encodeURIComponent(query)}`)
+      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=20`)
       const data = await res.json()
-      setResults(data.records || [])
+
+      if (data.success) {
+        const results = recordType === 'projects' ? data.data.projects : data.data.companies
+        setResults(results || [])
+      } else {
+        setResults([])
+      }
     } catch (error) {
       console.error('Search failed:', error)
       setResults([])
