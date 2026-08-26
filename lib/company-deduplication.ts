@@ -110,6 +110,8 @@ export async function scanForDuplicateCompanies(
     .from('companies')
     .select('id, name, industry, location')
 
+  console.log('[Company Dedup] Fetch result - error:', error, 'count:', companies?.length)
+
   if (error || !companies) {
     console.error('[Company Dedup] Failed to fetch companies:', error)
     return []

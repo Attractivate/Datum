@@ -10,7 +10,11 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { limit = 100 } = body
 
+    console.log('[Scan Companies] Starting scan with limit:', limit)
+
     const candidates = await scanForDuplicateCompanies(limit)
+
+    console.log('[Scan Companies] Found', candidates.length, 'candidates')
 
     return Response.json({
       success: true,
@@ -18,8 +22,10 @@ export async function POST(request: Request) {
       candidates: candidates.slice(0, 10)
     })
   } catch (error) {
+    const message = error instanceof Error ? error.message : 'Scan failed'
+    console.error('[Scan Companies] Error:', message)
     return Response.json(
-      { error: error instanceof Error ? error.message : 'Scan failed' },
+      { error: message },
       { status: 500 }
     )
   }
