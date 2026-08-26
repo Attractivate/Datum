@@ -208,14 +208,30 @@ export async function getProjects(filters?: ProjectFilters) {
 }
 
 export async function getProjectById(id: string) {
+  // Try Supabase UUID first
   const { data, error } = await supabase
     .from('projects')
     .select('*')
     .eq('id', id)
     .single()
 
+  if (!error && data) return data as Project
+
+  // Fallback to Airtable ID lookup
+  if (error && error.code === 'PGRST116') { // No rows found
+    const supabaseData = await supabase
+      .from('projects')
+      .select('*')
+      .eq('airtable_id', id)
+      .single()
+
+    if (!supabaseData.error && supabaseData.data) {
+      return supabaseData.data as Project
+    }
+  }
+
   if (error) throw error
-  return data as Project
+  return null
 }
 
 export async function getProjectByIdFromAirtable(id: string) {
