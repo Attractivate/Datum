@@ -387,11 +387,10 @@ export async function createProject(project: Partial<Project>) {
 // Companies
 export async function getCompanies(filters?: CompanyFilters) {
   try {
-    // Fetch from Supabase - get ALL companies (excluding merged/duplicate records)
+    // Fetch from Supabase - get ALL companies
     const { data: companies, error } = await supabase
       .from('companies')
       .select('*')
-      .or('is_duplicate.is.null,is_duplicate.eq.false')
       .limit(10000)
 
     if (error) throw error
