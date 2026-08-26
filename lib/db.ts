@@ -396,7 +396,26 @@ export async function getCompanies(filters?: CompanyFilters) {
     if (error) throw error
     if (!companies) return []
 
-    let filtered = companies
+    // Get all projects to calculate project counts per company
+    const { data: projects } = await supabase
+      .from('projects')
+      .select('id, developer_id, owner_id')
+
+    const projectCountByCompany: Record<string, number> = {}
+    projects?.forEach(p => {
+      if (p.developer_id) {
+        projectCountByCompany[p.developer_id] = (projectCountByCompany[p.developer_id] || 0) + 1
+      }
+      if (p.owner_id && p.owner_id !== p.developer_id) {
+        projectCountByCompany[p.owner_id] = (projectCountByCompany[p.owner_id] || 0) + 1
+      }
+    })
+
+    // Add project counts to companies
+    let filtered = companies.map(c => ({
+      ...c,
+      projects_count: projectCountByCompany[c.id] || 0,
+    }))
 
     // Apply filters
     if (filters?.search) {
