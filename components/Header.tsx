@@ -33,6 +33,7 @@ export default function Header() {
             <Link href="/industries" className="nav-link">Industries</Link>
             <Link href="/contacts" className="nav-link">Contacts</Link>
             <Link href="/search" className="nav-link">Search</Link>
+            <Link href="/merge" className="nav-link">Merge</Link>
           </nav>
         </div>
       </header>
