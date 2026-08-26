@@ -217,28 +217,25 @@ function findBestMatch(
  * Get data summary for a project
  */
 async function getProjectDataSummary(projectId: string) {
-  const [updates, milestones, companies] = await Promise.all([
-    supabase
-      .from('project_updates')
-      .select('id')
-      .eq('project_id', projectId)
-      .then(r => r.data?.length || 0),
-    supabase
-      .from('milestones')
-      .select('id')
-      .eq('project_id', projectId)
-      .then(r => r.data?.length || 0),
-    supabase
-      .from('company_roles')
-      .select('id')
-      .eq('project_id', projectId)
-      .then(r => r.data?.length || 0)
-  ])
+  const { data: updates } = await supabase
+    .from('project_updates')
+    .select('id')
+    .eq('project_id', projectId)
+
+  const { data: milestones } = await supabase
+    .from('milestones')
+    .select('id')
+    .eq('project_id', projectId)
+
+  const { data: companies } = await supabase
+    .from('company_roles')
+    .select('id')
+    .eq('project_id', projectId)
 
   return {
-    updates_count: updates,
-    milestones_count: milestones,
-    companies_linked: companies
+    updates_count: updates?.length || 0,
+    milestones_count: milestones?.length || 0,
+    companies_linked: companies?.length || 0
   }
 }
 
