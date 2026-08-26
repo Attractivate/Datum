@@ -1,31 +1,29 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    // Fetch ALL projects from Supabase - bypass broken getProjects()
-    const { data: projects, error } = await supabase
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+    )
+
+    const { data, error } = await supabase
       .from('projects')
       .select('*')
-      .order('name', { ascending: true })
+      .order('name')
 
-    if (error) throw error
+    if (error) {
+      console.error('Supabase error:', error)
+      return Response.json({ success: true, data: [], count: 0 })
+    }
 
     return Response.json({
       success: true,
-      data: projects || [],
-      count: (projects || []).length,
+      data: data || [],
+      count: (data || []).length,
     })
-  } catch (error) {
-    console.error('Error fetching projects:', error)
-    return Response.json({
-      success: true,
-      data: [],
-      count: 0,
-    })
+  } catch (e) {
+    console.error('API error:', e)
+    return Response.json({ success: true, data: [], count: 0 })
   }
 }
