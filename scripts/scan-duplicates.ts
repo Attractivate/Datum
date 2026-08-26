@@ -9,7 +9,7 @@
  */
 
 import * as dotenv from 'dotenv'
-import { scanForDuplicates, recordCandidates } from '@/lib/deduplication'
+import { scanForDuplicates, recordCandidates } from '../lib/deduplication'
 
 dotenv.config({ path: '.env.local' })
 
