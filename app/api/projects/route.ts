@@ -27,8 +27,8 @@ export async function GET(request: Request) {
       query = query.ilike('location', `%${state}%`)
     }
 
-    // Fetch with limit
-    const { data: projects, count } = await query.limit(10000).order('name')
+    // Fetch all projects (no limit)
+    const { data: projects, count } = await query.order('name')
 
     // Filter for verified projects (those with at least one company role)
     const verified = searchParams.get('verified') !== 'false'
