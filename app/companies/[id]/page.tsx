@@ -125,6 +125,16 @@ export default function CompanyDetail({ params }: { params: Promise<{ id: string
         </div>
       </div>
 
+      {/* Company Description */}
+      {company.description && (
+        <div style={{ background: '#FFFFFF', border: '1px solid #D6D9E8', borderRadius: '4px', padding: '1.2rem', boxShadow: '0 1px 2px rgba(28,1,64,.06)' }}>
+          <h2 style={{ fontFamily: 'Chivo,sans-serif', fontWeight: 700, fontSize: '1rem', color: '#1C0140', margin: '0 0 0.8rem 0' }}>About</h2>
+          <p style={{ fontFamily: 'Source Sans 3,sans-serif', fontSize: '0.95rem', color: '#5A5D78', lineHeight: 1.6, margin: 0 }}>
+            {company.description}
+          </p>
+        </div>
+      )}
+
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(9.5rem, 1fr))', gap: '0.7rem' }}>
         <div style={{ background: '#FFFFFF', border: '1px solid #D6D9E8', borderRadius: '4px', padding: '0.8rem 0.95rem 0.9rem', display: 'flex', flexDirection: 'column', gap: '0.08rem', boxShadow: '0 1px 2px rgba(28,1,64,.06)' }}>
