@@ -71,6 +71,31 @@ if (!supabaseUrl || !supabaseServiceKey) {
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
+const stateMap: Record<string, string> = {
+  'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR',
+  'California': 'CA', 'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE',
+  'Florida': 'FL', 'Georgia': 'GA', 'Hawaii': 'HI', 'Idaho': 'ID',
+  'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA', 'Kansas': 'KS',
+  'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
+  'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS',
+  'Missouri': 'MO', 'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV',
+  'New Hampshire': 'NH', 'New Jersey': 'NJ', 'New Mexico': 'NM', 'New York': 'NY',
+  'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH', 'Oklahoma': 'OK',
+  'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
+  'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT',
+  'Vermont': 'VT', 'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV',
+  'Wisconsin': 'WI', 'Wyoming': 'WY'
+}
+
+function extractStateFromLocation(location: string): string | null {
+  if (!location) return null
+  for (const [state, code] of Object.entries(stateMap)) {
+    if (location.includes(state)) return code
+    if (location.includes(code)) return code
+  }
+  return null
+}
+
 async function syncCompanies(): Promise<{ inserted: number; failed: number; duration: number }> {
   const startTime = Date.now()
   let inserted = 0,
@@ -156,11 +181,15 @@ async function syncProjects(): Promise<{ inserted: number; failed: number; durat
           return companyIdMap.get(ref) || companyNameMap.get(ref?.toString().toLowerCase()) || null
         }
 
+        const location = fields['Location'] || 'Unknown Location'
+        const state = extractStateFromLocation(location)
+
         const project = {
           airtable_id: record.id,
           name: fields['Project Name'] || fields['Name'] || 'Unknown',
           description: fields['Project Details'] || fields['Description'] || null,
-          location: fields['Location'] || 'Unknown Location',
+          location: location,
+          state: state,
           stage: fields['Stage of Project'] || fields['Project Stage'] || null,
           capacity_mw: capacity_mw,
           past_due: fields['Past Due'] === true,

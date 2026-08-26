@@ -56,37 +56,50 @@ async function fixAllDataIssues() {
       'Wisconsin': 'WI', 'Wyoming': 'WY'
     }
 
-    const { data: projects } = await supabase
-      .from('projects')
-      .select('id, location, state')
-      .is('state', null)
-      .limit(100)
-
+    // Process all projects without state (in batches to avoid timeout)
     let stateFixed = 0
-    for (const proj of projects || []) {
-      let statecode = null
-      // Try to find state in location string
-      for (const [state, code] of Object.entries(stateMap)) {
-        if (proj.location?.includes(state)) {
-          statecode = code
-          break
+    let processed = 0
+    const batchSize = 500
+
+    while (true) {
+      const { data: projects } = await supabase
+        .from('projects')
+        .select('id, location, state')
+        .is('state', null)
+        .range(processed, processed + batchSize - 1)
+
+      if (!projects || projects.length === 0) break
+
+      console.log(`   Processing batch: ${processed}-${processed + projects.length}`)
+
+      for (const proj of projects) {
+        let statecode = null
+        // Try to find state in location string
+        for (const [state, code] of Object.entries(stateMap)) {
+          if (proj.location?.includes(state)) {
+            statecode = code
+            break
+          }
+          if (proj.location?.includes(code)) {
+            statecode = code
+            break
+          }
         }
-        if (proj.location?.includes(code)) {
-          statecode = code
-          break
+
+        if (statecode) {
+          const { error } = await supabase
+            .from('projects')
+            .update({ state: statecode })
+            .eq('id', proj.id)
+
+          if (!error) stateFixed++
         }
       }
 
-      if (statecode) {
-        const { error } = await supabase
-          .from('projects')
-          .update({ state: statecode })
-          .eq('id', proj.id)
-
-        if (!error) stateFixed++
-      }
+      processed += projects.length
     }
-    console.log(`   Fixed ${stateFixed} project states`)
+
+    console.log(`   Fixed ${stateFixed} project states out of ${processed} null records`)
 
     // 3. Check and set default values for flags
     console.log('\n✅ Verified data fields')
