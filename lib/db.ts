@@ -807,7 +807,7 @@ export async function search(query: string, limit = 50) {
       .from('projects')
       .select('*')
       .ilike('name', searchTerm)
-      .eq('is_duplicate', false)
+      .or('is_duplicate.is.null,is_duplicate.eq.false')
       .limit(Math.ceil(limit / 3)),
     supabase
       .from('companies')
