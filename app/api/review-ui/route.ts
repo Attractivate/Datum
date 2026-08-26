@@ -6,12 +6,35 @@ export async function GET() {
   <title>Review Duplicates - Datum</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { font-family: system-ui, -apple-system, sans-serif; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f3f4f6; color: #333; }
+    .container { max-width: 1280px; margin: 0 auto; padding: 32px; }
+    h1 { font-size: 30px; font-weight: bold; margin-bottom: 8px; }
+    .subtitle { color: #666; margin-bottom: 32px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 32px; }
+    .card { padding: 24px; border: 2px solid; border-radius: 8px; }
+    .card-keep { background: #dcfce7; border-color: #22c55e; }
+    .card-merge { background: #fee2e2; border-color: #ef4444; }
+    .card h2 { font-weight: bold; margin-bottom: 16px; font-size: 16px; }
+    .card-keep h2 { color: #166534; }
+    .card-merge h2 { color: #991b1b; }
+    .project-name { font-size: 20px; font-weight: bold; margin-bottom: 8px; }
+    .project-location { font-size: 14px; color: #666; margin-bottom: 8px; }
+    .match-info { font-size: 12px; color: #666; margin-top: 16px; }
+    .buttons { display: flex; gap: 16px; margin-bottom: 32px; }
+    button { padding: 16px 24px; font-size: 16px; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; flex: 1; }
+    .btn-merge { background: #22c55e; color: white; }
+    .btn-merge:hover { background: #16a34a; }
+    .btn-skip { background: #9ca3af; color: white; }
+    .btn-skip:hover { background: #6b7280; }
+    .btn-load { background: #3b82f6; color: white; width: 100%; }
+    .btn-load:hover { background: #2563eb; }
+    .loading { padding: 32px; }
+    .error { padding: 32px; color: #dc2626; }
   </style>
 </head>
-<body class="bg-gray-50">
+<body>
   <div id="app"></div>
   <script>
     let candidates = [];
@@ -21,8 +44,10 @@ export async function GET() {
     async function loadCandidates(type) {
       const endpoint = type === 'projects' ? '/api/scan' : '/api/scan-companies';
       try {
+        document.getElementById('app').innerHTML = '<div class="container"><div class="loading">Loading candidates...</div></div>';
         const res = await fetch(endpoint, {
           method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ limit: 100 })
         });
         const data = await res.json();
@@ -31,7 +56,7 @@ export async function GET() {
         render();
       } catch (e) {
         console.error(e);
-        alert('Error loading candidates');
+        document.getElementById('app').innerHTML = \`<div class="container"><div class="error">Error: \${e.message}</div></div>\`;
       }
     }
 
@@ -75,13 +100,10 @@ export async function GET() {
 
       if (candidates.length === 0) {
         app.innerHTML = \`
-          <div class="p-8">
-            <h1 class="text-3xl font-bold mb-4">Review Duplicates</h1>
-            <div class="mb-8">
-              <button onclick="switchTab('projects')" class="\${activeTab === 'projects' ? 'bg-blue-600 text-white' : 'bg-gray-200'} px-6 py-2 rounded mr-4">Projects</button>
-              <button onclick="switchTab('companies')" class="\${activeTab === 'companies' ? 'bg-blue-600 text-white' : 'bg-gray-200'} px-6 py-2 rounded">Companies</button>
-            </div>
-            <button onclick="load()" class="bg-green-600 text-white px-6 py-2 rounded">Load Candidates</button>
+          <div class="container">
+            <h1>Review Duplicates</h1>
+            <div class="subtitle">Find and merge duplicate entries</div>
+            <button onclick="loadCandidates('projects')" class="btn-load">Load Project Duplicates</button>
           </div>
         \`;
         return;
@@ -89,29 +111,27 @@ export async function GET() {
 
       const c = candidates[currentIndex];
       app.innerHTML = \`
-        <div class="min-h-screen bg-gray-50">
-          <div class="max-w-6xl mx-auto p-8">
-            <h1 class="text-3xl font-bold mb-2">Review Duplicates</h1>
-            <p class="text-gray-600 mb-8">\${currentIndex + 1} of \${candidates.length}</p>
+        <div class="container">
+          <h1>Review Duplicates</h1>
+          <p class="subtitle">\${currentIndex + 1} of \${candidates.length}</p>
 
-            <div class="grid grid-cols-2 gap-8 mb-8">
-              <div class="bg-green-50 p-6 border-2 border-green-200 rounded-lg">
-                <h2 class="font-bold text-green-800 mb-4">KEEP THIS</h2>
-                <p class="text-xl font-bold mb-2">\${c.canonical.name}</p>
-                <p class="text-sm text-gray-600">\${c.canonical.location || c.canonical.industry || '—'}</p>
-              </div>
-              <div class="bg-red-50 p-6 border-2 border-red-200 rounded-lg">
-                <h2 class="font-bold text-red-800 mb-4">MERGE INTO LEFT</h2>
-                <p class="text-xl font-bold mb-2">\${c.duplicate.name}</p>
-                <p class="text-sm text-gray-600">\${c.duplicate.location || c.duplicate.industry || '—'}</p>
-                <p class="text-xs text-gray-500 mt-4">\${c.match_reason} (\${(c.confidence_score*100).toFixed(0)}%)</p>
-              </div>
+          <div class="grid">
+            <div class="card card-keep">
+              <h2>✓ KEEP THIS</h2>
+              <div class="project-name">\${c.canonical.name}</div>
+              <div class="project-location">\${c.canonical.location || '—'}</div>
             </div>
+            <div class="card card-merge">
+              <h2>✗ MERGE INTO LEFT</h2>
+              <div class="project-name">\${c.duplicate.name}</div>
+              <div class="project-location">\${c.duplicate.location || '—'}</div>
+              <div class="match-info">\${c.match_reason} (\${(c.confidence_score*100).toFixed(0)}%)</div>
+            </div>
+          </div>
 
-            <div class="flex gap-4">
-              <button onclick="merge()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded">✓ MERGE</button>
-              <button onclick="skip()" class="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-bold py-3 rounded">SKIP</button>
-            </div>
+          <div class="buttons">
+            <button onclick="merge()" class="btn-merge">✓ MERGE</button>
+            <button onclick="skip()" class="btn-skip">SKIP</button>
           </div>
         </div>
       \`;
