@@ -20,7 +20,7 @@ export async function GET() {
     // Get sample projects
     const { data, error: dataError } = await supabase
       .from('projects')
-      .select('id, name, location, state, developer_id, owner_id, nrc_docket, capacity_mw')
+      .select('id, name, location, state, developer_id, owner_id, capacity_mw')
       .limit(20)
 
     if (countError) {

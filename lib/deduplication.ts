@@ -1,11 +1,12 @@
 /**
  * Deduplication Service
  *
- * Identifies and merges duplicate projects with three-tier matching:
- * - Tier 1 (0.99): NRC docket exact match
- * - Tier 2 (0.85): Name similarity (85%+) + location + same owner
- * - Tier 3 (0.70): Fuzzy name + location + capacity (±10%)
- * - Tier 4 (0.60): Same company + location
+ * Identifies and merges duplicate projects with fuzzy name matching:
+ * - Tier 1 (0.90): Very similar name (90%+)
+ * - Tier 2 (0.85): Similar name (80%+) + same location
+ * - Tier 3 (0.80): Similar name (80%+) alone
+ * - Tier 4 (0.75): Similar name (75%+) alone
+ * - Tier 5 (0.70): Same company (owner/developer) + location
  */
 
 import { createClient } from '@supabase/supabase-js'
@@ -23,8 +24,6 @@ interface Project {
   capacity_mw?: number
   developer_id?: string
   owner_id?: string
-  nrc_docket?: string
-  source_url?: string
 }
 
 interface DeduplicationCandidate {
@@ -90,20 +89,13 @@ function findBestMatch(
   canonical: Project,
   duplicate: Project
 ): { score: number; reason: string } | null {
-  // Tier 1: Exact NRC docket match (nuclear projects)
-  if (canonical.nrc_docket && duplicate.nrc_docket) {
-    if (canonical.nrc_docket === duplicate.nrc_docket) {
-      return { score: 0.99, reason: 'nrc_docket_exact' }
-    }
-  }
-
-  // Tier 2: Very similar name (90%+) - usually duplicates
+  // Tier 1: Very similar name (90%+) - usually duplicates
   const nameSim = nameSimilarity(canonical.name, duplicate.name)
   if (nameSim >= 0.90) {
     return { score: 0.90, reason: 'name_very_similar' }
   }
 
-  // Tier 3: High name similarity (80%+) + same location
+  // Tier 2: High name similarity (80%+) + same location
   if (nameSim >= 0.80) {
     const sameLocation = canonical.state === duplicate.state
     if (sameLocation) {
@@ -113,12 +105,12 @@ function findBestMatch(
     return { score: 0.80, reason: 'name_high_similarity' }
   }
 
-  // Tier 4: Similar name (75%+) alone is suspicious enough
+  // Tier 3: Similar name (75%+) alone is suspicious enough
   if (nameSim >= 0.75) {
     return { score: 0.75, reason: 'name_similar_75_percent' }
   }
 
-  // Tier 5: Same company (if available) + location
+  // Tier 4: Same company (if available) + location
   const sameOwner =
     canonical.owner_id &&
     duplicate.owner_id &&
@@ -178,7 +170,7 @@ export async function scanForDuplicates(
   // Fetch all projects (scan all, filter will be applied after matching)
   const { data: projects, error } = await supabase
     .from('projects')
-    .select('id, name, location, state, capacity_mw, developer_id, owner_id, nrc_docket')
+    .select('id, name, location, state, capacity_mw, developer_id, owner_id')
 
   if (error || !projects) {
     console.error('[Dedup] Failed to fetch projects:', error)
