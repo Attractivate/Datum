@@ -98,8 +98,10 @@ export async function POST(request: Request) {
       }
 
       ownerId = ownerCompany.id
-      companyIds.push(ownerId)
-      console.log(`[Enrich] Created owner company: ${ownerId}`)
+      if (ownerId) {
+        companyIds.push(ownerId)
+        console.log(`[Enrich] Created owner company: ${ownerId}`)
+      }
     }
 
     // Step 3: Create/update EPC company
@@ -119,10 +121,12 @@ export async function POST(request: Request) {
 
       if (epcError) {
         console.error('Failed to create EPC company:', epcError)
-      } else {
+      } else if (epcCompany) {
         epcId = epcCompany.id
-        companyIds.push(epcId)
-        console.log(`[Enrich] Created EPC company: ${epcId}`)
+        if (epcId) {
+          companyIds.push(epcId)
+          console.log(`[Enrich] Created EPC company: ${epcId}`)
+        }
       }
     }
 
@@ -143,16 +147,18 @@ export async function POST(request: Request) {
 
       if (oemError) {
         console.error('Failed to create OEM company:', oemError)
-      } else {
+      } else if (oemCompany) {
         oemId = oemCompany.id
-        companyIds.push(oemId)
-        console.log(`[Enrich] Created OEM company: ${oemId}`)
+        if (oemId) {
+          companyIds.push(oemId)
+          console.log(`[Enrich] Created OEM company: ${oemId}`)
+        }
       }
     }
 
     // Step 5: Update project with company references
     if (ownerId || epcId || oemId) {
-      const updateFields: Record<string, string> = {}
+      const updateFields: Record<string, any> = {}
       if (ownerId) updateFields.owner_id = ownerId
       if (epcId) updateFields.epc_id = epcId
       if (oemId) updateFields.oem_id = oemId
