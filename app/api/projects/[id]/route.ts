@@ -57,7 +57,21 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       if (ownerCompany) companies.push({ ...ownerCompany, role: 'owner' })
     }
 
-    return Response.json({ success: true, data, companies })
+    // Fetch project updates
+    const { data: updates, error: updatesError } = await supabase
+      .from('project_updates')
+      .select('*')
+      .eq('project_id', id)
+      .order('created_at', { ascending: false })
+
+    return Response.json({
+      success: true,
+      data: {
+        ...data,
+        updates: updates || []
+      },
+      companies
+    })
   } catch (error) {
     console.error('Error fetching project:', error)
     return Response.json(
