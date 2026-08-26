@@ -208,6 +208,13 @@ export async function scanForDuplicates(
     return []
   }
 
+  // Fetch ignored pairs
+  const { data: ignoredPairs } = await supabase
+    .from('project_deduplication_ignore')
+    .select('id_pair')
+
+  const ignoredSet = new Set(ignoredPairs?.map(p => p.id_pair) || [])
+
   console.log(`[Dedup] Scanning ${projects.length} projects`)
 
   const candidates: DeduplicationCandidate[] = []
@@ -240,7 +247,7 @@ export async function scanForDuplicates(
         const p2 = projectsWithWord[j]
 
         const pairKey = [p1.id, p2.id].sort().join('|')
-        if (seenPairs.has(pairKey)) continue
+        if (seenPairs.has(pairKey) || ignoredSet.has(pairKey)) continue
         seenPairs.add(pairKey)
 
         const match = findBestMatch(p1, p2)

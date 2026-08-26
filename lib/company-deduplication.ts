@@ -115,6 +115,13 @@ export async function scanForDuplicateCompanies(
     return []
   }
 
+  // Fetch ignored pairs
+  const { data: ignoredPairs } = await supabase
+    .from('company_deduplication_ignore')
+    .select('id_pair')
+
+  const ignoredSet = new Set(ignoredPairs?.map(p => p.id_pair) || [])
+
   console.log(`[Company Dedup] Scanning ${companies.length} companies`)
 
   const candidates: Candidate[] = []
@@ -140,7 +147,7 @@ export async function scanForDuplicateCompanies(
         const c2 = groupCompanies[j]
 
         const pairKey = [c1.id, c2.id].sort().join('|')
-        if (seenPairs.has(pairKey)) continue
+        if (seenPairs.has(pairKey) || ignoredSet.has(pairKey)) continue
         seenPairs.add(pairKey)
 
         const match = findBestMatch(c1, c2)

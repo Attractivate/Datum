@@ -22,12 +22,17 @@ export async function GET() {
     .project-name { font-size: 20px; font-weight: bold; margin-bottom: 8px; }
     .project-location { font-size: 14px; color: #666; margin-bottom: 8px; }
     .match-info { font-size: 12px; color: #666; margin-top: 16px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 2px solid #e5e7eb; }
+    .tab { padding: 12px 16px; border: none; background: transparent; cursor: pointer; font-size: 14px; font-weight: 500; color: #666; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+    .tab.active { color: #000; border-bottom-color: #3b82f6; }
     .buttons { display: flex; gap: 16px; margin-bottom: 32px; }
     button { padding: 16px 24px; font-size: 16px; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; flex: 1; }
     .btn-merge { background: #22c55e; color: white; }
     .btn-merge:hover { background: #16a34a; }
     .btn-skip { background: #9ca3af; color: white; }
     .btn-skip:hover { background: #6b7280; }
+    .btn-do-not-merge { background: #ef4444; color: white; }
+    .btn-do-not-merge:hover { background: #dc2626; }
     .btn-load { background: #3b82f6; color: white; width: 100%; }
     .btn-load:hover { background: #2563eb; }
     .loading { padding: 32px; }
@@ -91,6 +96,29 @@ export async function GET() {
       }
     }
 
+    async function doNotMerge() {
+      if (currentIndex >= candidates.length) return;
+      const c = candidates[currentIndex];
+
+      try {
+        await fetch(\`\${API_BASE}/api/mark-do-not-merge\`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: activeTab,
+            id1: c.canonical.id,
+            id2: c.duplicate.id
+          })
+        });
+
+        currentIndex++;
+        render();
+      } catch (e) {
+        console.error(e);
+        alert('Error: ' + e.message);
+      }
+    }
+
     function skip() {
       currentIndex++;
       render();
@@ -99,45 +127,47 @@ export async function GET() {
     function render() {
       const app = document.getElementById('app');
 
-      if (candidates.length === 0) {
-        app.innerHTML = \`
-          <div class="container">
-            <h1>Review Duplicates</h1>
-            <div class="subtitle">Find and merge duplicate entries</div>
-            <div style="display: flex; gap: 12px; margin-top: 24px;">
-              <button onclick="loadCandidates('projects')" class="btn-load" style="background: #3b82f6;">Review Projects</button>
-              <button onclick="loadCandidates('companies')" class="btn-load" style="background: #8b5cf6;">Review Companies</button>
-            </div>
-          </div>
-        \`;
-        return;
-      }
-
       const c = candidates[currentIndex];
       const typeLabel = activeTab === 'projects' ? 'Projects' : 'Companies';
+      const isLoading = candidates.length === 0;
+
       app.innerHTML = \`
         <div class="container">
           <h1>Review Duplicates</h1>
-          <p class="subtitle">\${typeLabel} • \${currentIndex + 1} of \${candidates.length}</p>
+          <div class="subtitle">Find and merge duplicate entries</div>
 
-          <div class="grid">
-            <div class="card card-keep">
-              <h2>✓ KEEP THIS</h2>
-              <div class="project-name">\${c.canonical.name}</div>
-              <div class="project-location">\${c.canonical.location || '—'}</div>
-            </div>
-            <div class="card card-merge">
-              <h2>✗ MERGE INTO LEFT</h2>
-              <div class="project-name">\${c.duplicate.name}</div>
-              <div class="project-location">\${c.duplicate.location || '—'}</div>
-              <div class="match-info">\${c.match_reason} (\${(c.confidence_score*100).toFixed(0)}%)</div>
-            </div>
+          <div class="tabs">
+            <button class="tab \${activeTab === 'projects' ? 'active' : ''}" onclick="switchTab('projects')">📊 Projects</button>
+            <button class="tab \${activeTab === 'companies' ? 'active' : ''}" onclick="switchTab('companies')">🏢 Companies</button>
           </div>
 
-          <div class="buttons">
-            <button onclick="merge()" class="btn-merge">✓ MERGE</button>
-            <button onclick="skip()" class="btn-skip">SKIP</button>
-          </div>
+          \${isLoading ? \`
+            <div style="padding: 32px; text-align: center; color: #666;">
+              <p>Click a tab above to load duplicates to review</p>
+            </div>
+          \` : \`
+            <p class="subtitle" style="margin-top: 16px;">\${typeLabel} • \${currentIndex + 1} of \${candidates.length}</p>
+
+            <div class="grid">
+              <div class="card card-keep">
+                <h2>✓ KEEP THIS</h2>
+                <div class="project-name">\${c.canonical.name}</div>
+                <div class="project-location">\${c.canonical.location || '—'}</div>
+              </div>
+              <div class="card card-merge">
+                <h2>✗ MERGE INTO LEFT</h2>
+                <div class="project-name">\${c.duplicate.name}</div>
+                <div class="project-location">\${c.duplicate.location || '—'}</div>
+                <div class="match-info">\${c.match_reason} (\${(c.confidence_score*100).toFixed(0)}%)</div>
+              </div>
+            </div>
+
+            <div class="buttons">
+              <button onclick="merge()" class="btn-merge">✓ MERGE</button>
+              <button onclick="skip()" class="btn-skip">SKIP</button>
+              <button onclick="doNotMerge()" class="btn-do-not-merge">✗ DO NOT MERGE</button>
+            </div>
+          \`}
         </div>
       \`;
     }
