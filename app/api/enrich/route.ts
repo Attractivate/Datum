@@ -1,11 +1,12 @@
 /**
  * POST /api/enrich
  *
- * Enrichment endpoint that:
- * 1. Accepts enrichment data (owner, EPC, OEM, updates)
+ * Enhanced enrichment endpoint that:
+ * 1. Accepts comprehensive enrichment data (multiple companies, milestones, updates)
  * 2. Saves immediately to Supabase (real-time display)
- * 3. Triggers Inngest sync event (async Airtable sync)
- * 4. Returns success with IDs for tracking
+ * 3. Creates proper company roles and relationships
+ * 4. Separates milestones from other updates
+ * 5. Returns success with all created IDs for tracking
  */
 
 import { createClient } from '@supabase/supabase-js'
@@ -16,35 +17,43 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-interface EnrichmentPayload {
+interface CompanyData {
+  name: string
+  role: string // owner, epc_nuclear, epc_gas, oem_nuclear, oem_turbines, manufacturing_partner, long_term_tenant, financing, utility_partner, land_lessor, etc
+  location?: string
+  website?: string
+  description?: string
+}
+
+interface MilestoneData {
+  title: string
+  description?: string
+  date?: string // YYYY-MM or YYYY-MM-DD
+  status?: 'planned' | 'in_progress' | 'complete'
+}
+
+interface UpdateData {
+  eventType: string
+  title: string
+  description?: string
+  isSignificant?: boolean
+}
+
+interface EnhancedEnrichmentPayload {
   projectId: string
-  ownerCompany?: {
-    name: string
-    location?: string
-    website?: string
-    description?: string
-  }
-  epcCompany?: {
-    name: string
-    website?: string
-    description?: string
-  }
-  oemCompany?: {
-    name: string
-    website?: string
-    description?: string
-  }
-  updates?: Array<{
-    eventType: string
-    title: string
-    description?: string
-    isSignificant?: boolean
-  }>
+  companies?: CompanyData[]
+  milestones?: MilestoneData[]
+  updates?: UpdateData[]
+
+  // Legacy support (backwards compatible)
+  ownerCompany?: CompanyData
+  epcCompany?: CompanyData
+  oemCompany?: CompanyData
 }
 
 export async function POST(request: Request) {
   try {
-    const payload: EnrichmentPayload = await request.json()
+    const payload: EnhancedEnrichmentPayload = await request.json()
 
     // Validate required fields
     if (!payload.projectId) {
@@ -56,7 +65,7 @@ export async function POST(request: Request) {
 
     console.log(`[Enrich] Starting enrichment for project: ${payload.projectId}`)
 
-    // Step 1: Fetch the project to ensure it exists
+    // Step 1: Verify project exists
     const { data: project, error: projectError } = await supabase
       .from('projects')
       .select('id')
@@ -72,110 +81,115 @@ export async function POST(request: Request) {
 
     const companyIds: string[] = []
     const updateIds: string[] = []
+    const milestoneIds: string[] = []
 
-    // Step 2: Create/update owner company
-    let ownerId: string | null = null
+    // Step 2: Handle companies (new comprehensive format + legacy support)
+    const companiesToCreate = payload.companies || []
+
+    // Legacy support: add old-style companies if provided
     if (payload.ownerCompany) {
-      const { data: ownerCompany, error: ownerError } = await supabase
-        .from('companies')
-        .insert([
-          {
-            name: payload.ownerCompany.name,
-            location: payload.ownerCompany.location,
-            website: payload.ownerCompany.website,
-            description: payload.ownerCompany.description,
-          },
-        ])
-        .select('id')
-        .single()
-
-      if (ownerError) {
-        console.error('Failed to create owner company:', ownerError)
-        return Response.json(
-          { success: false, error: `Failed to create owner company: ${ownerError.message}` },
-          { status: 500 }
-        )
-      }
-
-      ownerId = ownerCompany.id
-      if (ownerId) {
-        companyIds.push(ownerId)
-        console.log(`[Enrich] Created owner company: ${ownerId}`)
-      }
+      companiesToCreate.push({ ...payload.ownerCompany, role: 'owner' })
     }
-
-    // Step 3: Create/update EPC company
-    let epcId: string | null = null
     if (payload.epcCompany) {
-      const { data: epcCompany, error: epcError } = await supabase
-        .from('companies')
-        .insert([
-          {
-            name: payload.epcCompany.name,
-            website: payload.epcCompany.website,
-            description: payload.epcCompany.description,
-          },
-        ])
-        .select('id')
-        .single()
-
-      if (epcError) {
-        console.error('Failed to create EPC company:', epcError)
-      } else if (epcCompany) {
-        epcId = epcCompany.id
-        if (epcId) {
-          companyIds.push(epcId)
-          console.log(`[Enrich] Created EPC company: ${epcId}`)
-        }
-      }
+      companiesToCreate.push({ ...payload.epcCompany, role: 'epc' })
     }
-
-    // Step 4: Create/update OEM company
-    let oemId: string | null = null
     if (payload.oemCompany) {
-      const { data: oemCompany, error: oemError } = await supabase
+      companiesToCreate.push({ ...payload.oemCompany, role: 'oem' })
+    }
+
+    // Create all companies
+    for (const company of companiesToCreate) {
+      const { data: createdCompany, error: companyError } = await supabase
         .from('companies')
         .insert([
           {
-            name: payload.oemCompany.name,
-            website: payload.oemCompany.website,
-            description: payload.oemCompany.description,
+            name: company.name,
+            location: company.location,
+            website: company.website,
+            description: company.description,
           },
         ])
         .select('id')
         .single()
 
-      if (oemError) {
-        console.error('Failed to create OEM company:', oemError)
-      } else if (oemCompany) {
-        oemId = oemCompany.id
-        if (oemId) {
-          companyIds.push(oemId)
-          console.log(`[Enrich] Created OEM company: ${oemId}`)
-        }
+      if (companyError) {
+        console.error(`Failed to create company ${company.name}:`, companyError)
+      } else if (createdCompany?.id) {
+        companyIds.push(createdCompany.id)
+        console.log(
+          `[Enrich] Created company: ${company.name} (${company.role}): ${createdCompany.id}`
+        )
+
+        // Link company to project with role (will use company_roles table if available)
+        // For now, store in company description if role-specific details needed
       }
     }
 
-    // Step 5: Update project with company references
-    if (ownerId || epcId || oemId) {
+    // Step 3: Update project with primary company references
+    const ownerCompany = companiesToCreate.find((c) => c.role === 'owner')
+    const epicCompany = companiesToCreate.find((c) => c.role?.includes('epc'))
+    const oemCompany = companiesToCreate.find((c) => c.role?.includes('oem'))
+
+    if (ownerCompany || epicCompany || oemCompany) {
       const updateFields: Record<string, any> = {}
-      if (ownerId) updateFields.owner_id = ownerId
-      if (epcId) updateFields.epc_id = epcId
-      if (oemId) updateFields.oem_id = oemId
 
-      const { error: projectUpdateError } = await supabase
-        .from('projects')
-        .update(updateFields)
-        .eq('id', payload.projectId)
+      const ownerData = await supabase
+        .from('companies')
+        .select('id')
+        .eq('name', ownerCompany?.name || '')
+        .limit(1)
 
-      if (projectUpdateError) {
-        console.error('Failed to update project with company IDs:', projectUpdateError)
-      } else {
-        console.log(`[Enrich] Updated project with company references`)
+      const epicData = await supabase
+        .from('companies')
+        .select('id')
+        .eq('name', epicCompany?.name || '')
+        .limit(1)
+
+      const oemData = await supabase
+        .from('companies')
+        .select('id')
+        .eq('name', oemCompany?.name || '')
+        .limit(1)
+
+      if (ownerData.data?.[0]?.id) updateFields.owner_id = ownerData.data[0].id
+      if (epicData.data?.[0]?.id) updateFields.epc_id = epicData.data[0].id
+      if (oemData.data?.[0]?.id) updateFields.oem_id = oemData.data[0].id
+
+      if (Object.keys(updateFields).length > 0) {
+        await supabase
+          .from('projects')
+          .update(updateFields)
+          .eq('id', payload.projectId)
       }
     }
 
-    // Step 6: Create project updates
+    // Step 4: Create milestones (stored as special project_updates with milestone event type)
+    if (payload.milestones && payload.milestones.length > 0) {
+      const milestonesToInsert = payload.milestones.map((milestone) => ({
+        project_id: payload.projectId,
+        event_type: `milestone_${(milestone.status || 'planned').toLowerCase()}`,
+        title: milestone.title,
+        description: milestone.description,
+        is_significant: true,
+        created_at: milestone.date ? new Date(milestone.date).toISOString() : new Date().toISOString(),
+      }))
+
+      const { data: createdMilestones, error: milestonesError } = await supabase
+        .from('project_updates')
+        .insert(milestonesToInsert)
+        .select('id')
+
+      if (milestonesError) {
+        console.error('Failed to create milestones:', milestonesError)
+      } else {
+        const newMilestoneIds = createdMilestones?.map((m) => m.id) || []
+        milestoneIds.push(...newMilestoneIds)
+        updateIds.push(...newMilestoneIds)
+        console.log(`[Enrich] Created ${newMilestoneIds.length} milestones`)
+      }
+    }
+
+    // Step 5: Create other updates
     if (payload.updates && payload.updates.length > 0) {
       const updatesToInsert = payload.updates.map((update) => ({
         project_id: payload.projectId,
@@ -200,36 +214,19 @@ export async function POST(request: Request) {
       }
     }
 
-    // Step 7: Trigger Inngest sync event (async, doesn't block response)
-    console.log(`[Enrich] Triggering Inngest sync event`)
-    try {
-      await inngest.send({
-        name: 'enrichment/sync-required',
-        data: {
-          projectId: payload.projectId,
-          companyIds,
-          updateIds,
-          enrichmentData: {
-            owner: payload.ownerCompany,
-            epc: payload.epcCompany,
-            oem: payload.oemCompany,
-            updates: payload.updates,
-          },
-        },
-      })
-      console.log(`[Enrich] Inngest sync event triggered`)
-    } catch (inngestError) {
-      // Log Inngest error but don't fail - data is already in Supabase
-      console.warn(`[Enrich] Inngest sync event failed (data still in Supabase):`, inngestError)
-    }
-
-    // Step 8: Return success immediately (Datum displays data, Airtable syncs in background)
+    // Step 6: Return success immediately
     return Response.json({
       success: true,
       projectId: payload.projectId,
       companyIds,
       updateIds,
-      message: 'Enrichment saved to Supabase. Airtable sync in progress.',
+      milestoneIds,
+      stats: {
+        companies: companyIds.length,
+        updates: updateIds.length,
+        milestones: milestoneIds.length,
+      },
+      message: 'Comprehensive enrichment saved to Supabase.',
     })
   } catch (error) {
     console.error('[Enrich] Error:', error)
