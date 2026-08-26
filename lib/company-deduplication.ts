@@ -105,10 +105,10 @@ function findBestMatch(
 export async function scanForDuplicateCompanies(
   limit: number = 100
 ): Promise<Candidate[]> {
+  // Note: companies table doesn't have is_duplicate column, so we fetch all
   const { data: companies, error } = await supabase
     .from('companies')
     .select('id, name, industry, location')
-    .or('is_duplicate.is.false,is_duplicate.is.null')
 
   if (error || !companies) {
     console.error('[Company Dedup] Failed to fetch companies:', error)
