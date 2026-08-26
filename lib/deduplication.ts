@@ -204,7 +204,8 @@ export async function scanForDuplicates(
   const candidates: DeduplicationCandidate[] = []
   const seenPairs = new Set<string>()
 
-  // Compare each project pair
+  // Compare each project pair and find ALL matches (even low-confidence ones)
+  // User will review and approve/reject each
   for (let i = 0; i < projects.length; i++) {
     for (let j = i + 1; j < projects.length; j++) {
       const p1 = projects[i]
@@ -215,7 +216,9 @@ export async function scanForDuplicates(
       seenPairs.add(pairKey)
 
       const match = findBestMatch(p1, p2)
-      if (!match || match.score < minConfidence) continue
+      // Include ALL matches found, even below minConfidence
+      // User reviews and decides
+      if (!match) continue
 
       const dataSummary = await getProjectDataSummary(p1.id)
 
@@ -232,7 +235,7 @@ export async function scanForDuplicates(
     if (candidates.length >= limit) break
   }
 
-  console.log(`[Dedup] Found ${candidates.length} candidates`)
+  console.log(`[Dedup] Found ${candidates.length} similar projects for review`)
   return candidates.sort((a, b) => b.confidence_score - a.confidence_score)
 }
 
