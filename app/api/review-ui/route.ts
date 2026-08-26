@@ -69,10 +69,11 @@ export async function GET() {
       try {
         const res = await fetch(endpoint, {
           method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             action: 'merge',
-            canonical_id: c.canonical.id,
-            duplicate_id: c.duplicate.id,
+            canonical_project_id: c.canonical.id,
+            duplicate_project_id: c.duplicate.id,
             merged_by: 'user'
           })
         });
