@@ -48,6 +48,12 @@ export async function POST(request: Request) {
       )
     }
 
+    // Get sample project names to understand the data
+    const { data: names } = await supabase
+      .from('projects')
+      .select('name')
+      .limit(10)
+
     const candidates = await scanForDuplicates(min_confidence, limit)
 
     if (candidates.length > 0) {
@@ -57,7 +63,7 @@ export async function POST(request: Request) {
     return Response.json({
       success: true,
       project_count: count,
-      sample_project: sample?.[0],
+      sample_names: names?.map(p => p.name),
       candidates_found: candidates.length,
       candidates: candidates.slice(0, 10)
     })
