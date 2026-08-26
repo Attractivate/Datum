@@ -19,7 +19,7 @@ export const industriesConfig = {
     types: ['Pharmaceutical', 'Biotech', 'Manufacturing', 'Research'],
     count: 168
   },
-  'Water': {
+  'Water Infrastructure': {
     types: ['Treatment', 'Distribution', 'Infrastructure', 'Desalination'],
     count: 0  // Will be populated from data
   }
