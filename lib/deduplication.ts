@@ -84,131 +84,67 @@ function nameSimilarity(s1: string, s2: string): number {
 }
 
 /**
- * Tier 1: NRC Docket Match (highest confidence)
- */
-function checkNrcDocketMatch(
-  p1: Project,
-  p2: Project
-): { score: number; reason: string } | null {
-  if (!p1.nrc_docket || !p2.nrc_docket) return null
-  if (p1.nrc_docket === p2.nrc_docket) {
-    return { score: 0.99, reason: 'nrc_docket_exact_match' }
-  }
-  return null
-}
-
-/**
- * Tier 2: Name Similarity + Location + Company
- */
-function checkNameLocationCompanyMatch(
-  canonical: Project,
-  duplicate: Project
-): { score: number; reason: string } | null {
-  const nameSim = nameSimilarity(canonical.name, duplicate.name)
-
-  // Must have 85%+ name similarity
-  if (nameSim < 0.85) return null
-
-  // Location must match exactly (state level is ok)
-  const locationsMatch =
-    (canonical.location === duplicate.location ||
-      canonical.state === duplicate.state) &&
-    canonical.state === duplicate.state
-
-  if (!locationsMatch) return null
-
-  // Must have same owner or developer
-  const sameOwner =
-    canonical.owner_id &&
-    duplicate.owner_id &&
-    canonical.owner_id === duplicate.owner_id
-  const sameDeveloper =
-    canonical.developer_id &&
-    duplicate.developer_id &&
-    canonical.developer_id === duplicate.developer_id
-
-  if (!sameOwner && !sameDeveloper) return null
-
-  return { score: 0.85, reason: 'name_similarity_location_company' }
-}
-
-/**
- * Tier 3: Fuzzy Name + Location + Capacity
- */
-function checkFuzzyNameLocationCapacity(
-  canonical: Project,
-  duplicate: Project
-): { score: number; reason: string } | null {
-  const nameSim = nameSimilarity(canonical.name, duplicate.name)
-
-  // Must have 70%+ name similarity
-  if (nameSim < 0.7) return null
-
-  // Location must match
-  const locationsMatch =
-    canonical.state === duplicate.state &&
-    (canonical.location === duplicate.location ||
-      (!canonical.location && !duplicate.location))
-
-  if (!locationsMatch) return null
-
-  // Capacity check (if both exist)
-  if (canonical.capacity_mw && duplicate.capacity_mw) {
-    const capacityDiff = Math.abs(
-      canonical.capacity_mw - duplicate.capacity_mw
-    )
-    const capacityPercent = capacityDiff / Math.max(canonical.capacity_mw, 1)
-
-    if (capacityPercent > 0.1) return null // More than 10% difference
-  }
-
-  return { score: 0.7, reason: 'fuzzy_name_location_capacity' }
-}
-
-/**
- * Tier 4: Same Company + Location
- */
-function checkCompanyLocationMatch(
-  canonical: Project,
-  duplicate: Project
-): { score: number; reason: string } | null {
-  const sameOwner =
-    canonical.owner_id &&
-    duplicate.owner_id &&
-    canonical.owner_id === duplicate.owner_id
-  const sameDeveloper =
-    canonical.developer_id &&
-    duplicate.developer_id &&
-    canonical.developer_id === duplicate.developer_id
-
-  if (!sameOwner && !sameDeveloper) return null
-
-  const locationsMatch = canonical.state === duplicate.state
-
-  if (!locationsMatch) return null
-
-  return { score: 0.6, reason: 'company_location_match' }
-}
-
-/**
- * Find best matching tier for a project pair
+ * Simplified matching: focus on what actually identifies duplicates
  */
 function findBestMatch(
   canonical: Project,
   duplicate: Project
 ): { score: number; reason: string } | null {
-  // Try tiers in order of confidence
-  const tier1 = checkNrcDocketMatch(canonical, duplicate)
-  if (tier1) return tier1
+  // Tier 1: Exact NRC docket match (nuclear projects)
+  if (canonical.nrc_docket && duplicate.nrc_docket) {
+    if (canonical.nrc_docket === duplicate.nrc_docket) {
+      return { score: 0.99, reason: 'nrc_docket_exact' }
+    }
+  }
 
-  const tier2 = checkNameLocationCompanyMatch(canonical, duplicate)
-  if (tier2) return tier2
+  // Tier 2: Very similar name (90%+) - usually duplicates
+  const nameSim = nameSimilarity(canonical.name, duplicate.name)
+  if (nameSim >= 0.90) {
+    return { score: 0.90, reason: 'name_very_similar' }
+  }
 
-  const tier3 = checkFuzzyNameLocationCapacity(canonical, duplicate)
-  if (tier3) return tier3
+  // Tier 3: High name similarity (80%+) + same location
+  if (nameSim >= 0.80) {
+    const sameLocation = canonical.state === duplicate.state
+    if (sameLocation) {
+      return { score: 0.85, reason: 'name_similar_same_location' }
+    }
+    // Even without location, high name sim is suspicious
+    return { score: 0.80, reason: 'name_high_similarity' }
+  }
 
-  const tier4 = checkCompanyLocationMatch(canonical, duplicate)
-  if (tier4) return tier4
+  // Tier 4: Similar name (75%+) + same company
+  if (nameSim >= 0.75) {
+    const sameOwner =
+      canonical.owner_id &&
+      duplicate.owner_id &&
+      canonical.owner_id === duplicate.owner_id
+    const sameDeveloper =
+      canonical.developer_id &&
+      duplicate.developer_id &&
+      canonical.developer_id === duplicate.developer_id
+
+    if (sameOwner || sameDeveloper) {
+      return { score: 0.78, reason: 'name_similar_same_company' }
+    }
+  }
+
+  // Tier 5: Same company (if available) + location
+  const sameOwner =
+    canonical.owner_id &&
+    duplicate.owner_id &&
+    canonical.owner_id === duplicate.owner_id
+  const sameDeveloper =
+    canonical.developer_id &&
+    duplicate.developer_id &&
+    canonical.developer_id === duplicate.developer_id
+
+  if (sameOwner || sameDeveloper) {
+    const sameLocation = canonical.state === duplicate.state
+    if (sameLocation) {
+      return { score: 0.70, reason: 'same_company_location' }
+    }
+  }
 
   return null
 }
