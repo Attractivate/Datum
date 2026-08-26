@@ -387,19 +387,21 @@ export async function createProject(project: Partial<Project>) {
 // Companies
 export async function getCompanies(filters?: CompanyFilters) {
   try {
-    // Fetch from Supabase - get ALL companies
+    // Fetch from Supabase - get ALL companies (excluding merged/duplicate records)
     const { data: companies, error } = await supabase
       .from('companies')
       .select('*')
+      .or('is_duplicate.is.null,is_duplicate.eq.false')
       .limit(10000)
 
     if (error) throw error
     if (!companies) return []
 
-    // Get all projects to calculate project counts per company
+    // Get all projects to calculate project counts per company (excluding merged projects)
     const { data: projects } = await supabase
       .from('projects')
       .select('id, developer_id, owner_id')
+      .or('is_duplicate.is.null,is_duplicate.eq.false')
 
     const projectCountByCompany: Record<string, number> = {}
     projects?.forEach(p => {

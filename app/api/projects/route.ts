@@ -14,7 +14,7 @@ export async function GET(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY || ''
     )
 
-    let query = supabase.from('projects').select('*')
+    let query = supabase.from('projects').select('*').or('is_duplicate.is.null,is_duplicate.eq.false')
 
     // Map industry name/slug to UUID if provided
     if (industry && industry !== 'all') {

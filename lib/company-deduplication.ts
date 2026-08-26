@@ -185,9 +185,11 @@ export async function mergeCompanies(
 
     if (updateError) throw new Error(`Company role update failed: ${updateError.message}`)
 
-    // Note: Companies table doesn't have is_duplicate column like projects do
-    // Company merges are tracked through the company_roles reassignment above
-    // No additional archival needed
+    // Mark duplicate as merged (if is_duplicate column exists)
+    await supabase
+      .from('companies')
+      .update({ is_duplicate: true })
+      .eq('id', duplicateId)
 
     console.log(`[Company Dedup] Successfully merged ${duplicateId} into ${canonicalId}`)
     return { success: true }
