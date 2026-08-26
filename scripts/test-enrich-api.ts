@@ -19,19 +19,19 @@ async function testEnrichmentAPI() {
     projectId,
     ownerCompany: {
       name: 'NextEra Energy',
-      email: 'contact@nextera.com',
-      phone: '+1-561-694-4000',
+      location: 'Miami, FL',
       website: 'https://www.nexteraenergy.com',
-      address: 'Miami, FL',
+      description: 'Major renewable energy company',
     },
     epcCompany: {
       name: 'Stellar Power',
-      email: 'projects@stellarpower.com',
-      phone: '+1-512-555-0100',
+      website: 'https://www.stellarpower.com',
+      description: 'Engineering, Procurement & Construction contractor',
     },
     oemCompany: {
       name: 'First Solar',
-      email: 'contact@firstsolar.com',
+      website: 'https://www.firstsolar.com',
+      description: 'Solar panel manufacturer',
     },
     updates: [
       {

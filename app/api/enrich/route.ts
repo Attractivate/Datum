@@ -20,19 +20,19 @@ interface EnrichmentPayload {
   projectId: string
   ownerCompany?: {
     name: string
-    email?: string
-    phone?: string
+    location?: string
     website?: string
-    address?: string
+    description?: string
   }
   epcCompany?: {
     name: string
-    email?: string
-    phone?: string
+    website?: string
+    description?: string
   }
   oemCompany?: {
     name: string
-    email?: string
+    website?: string
+    description?: string
   }
   updates?: Array<{
     eventType: string
@@ -81,11 +81,9 @@ export async function POST(request: Request) {
         .insert([
           {
             name: payload.ownerCompany.name,
-            email: payload.ownerCompany.email,
-            phone: payload.ownerCompany.phone,
+            location: payload.ownerCompany.location,
             website: payload.ownerCompany.website,
-            address: payload.ownerCompany.address,
-            role: 'owner',
+            description: payload.ownerCompany.description,
           },
         ])
         .select('id')
@@ -112,9 +110,8 @@ export async function POST(request: Request) {
         .insert([
           {
             name: payload.epcCompany.name,
-            email: payload.epcCompany.email,
-            phone: payload.epcCompany.phone,
-            role: 'epc',
+            website: payload.epcCompany.website,
+            description: payload.epcCompany.description,
           },
         ])
         .select('id')
@@ -137,8 +134,8 @@ export async function POST(request: Request) {
         .insert([
           {
             name: payload.oemCompany.name,
-            email: payload.oemCompany.email,
-            role: 'oem',
+            website: payload.oemCompany.website,
+            description: payload.oemCompany.description,
           },
         ])
         .select('id')
@@ -199,20 +196,26 @@ export async function POST(request: Request) {
 
     // Step 7: Trigger Inngest sync event (async, doesn't block response)
     console.log(`[Enrich] Triggering Inngest sync event`)
-    await inngest.send({
-      name: 'enrichment/sync-required',
-      data: {
-        projectId: payload.projectId,
-        companyIds,
-        updateIds,
-        enrichmentData: {
-          owner: payload.ownerCompany,
-          epc: payload.epcCompany,
-          oem: payload.oemCompany,
-          updates: payload.updates,
+    try {
+      await inngest.send({
+        name: 'enrichment/sync-required',
+        data: {
+          projectId: payload.projectId,
+          companyIds,
+          updateIds,
+          enrichmentData: {
+            owner: payload.ownerCompany,
+            epc: payload.epcCompany,
+            oem: payload.oemCompany,
+            updates: payload.updates,
+          },
         },
-      },
-    })
+      })
+      console.log(`[Enrich] Inngest sync event triggered`)
+    } catch (inngestError) {
+      // Log Inngest error but don't fail - data is already in Supabase
+      console.warn(`[Enrich] Inngest sync event failed (data still in Supabase):`, inngestError)
+    }
 
     // Step 8: Return success immediately (Datum displays data, Airtable syncs in background)
     return Response.json({
