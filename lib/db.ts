@@ -371,25 +371,32 @@ export async function createProject(project: Partial<Project>) {
 // Companies
 export async function getCompanies(filters?: CompanyFilters) {
   try {
-    // Fetch from Airtable - get ALL companies
-    const records = await fetchAirtableRecords('Companies', { maxRecords: 100000 })
-    let companies = records.map(mapAirtableCompanyRecord)
+    // Fetch from Supabase - get ALL companies
+    const { data: companies, error } = await supabase
+      .from('companies')
+      .select('*')
+      .limit(10000)
+
+    if (error) throw error
+    if (!companies) return []
+
+    let filtered = companies
 
     // Apply filters
     if (filters?.search) {
       const searchLower = filters.search.toLowerCase()
-      companies = companies.filter(c =>
+      filtered = filtered.filter(c =>
         c.name.toLowerCase().includes(searchLower) ||
-        c.headquarters.toLowerCase().includes(searchLower)
+        (c.headquarters?.toLowerCase().includes(searchLower) || false)
       )
     }
 
     // Sort by name
-    companies.sort((a, b) => a.name.localeCompare(b.name))
+    filtered.sort((a, b) => a.name.localeCompare(b.name))
 
-    return companies
+    return filtered
   } catch (error) {
-    console.error('Error fetching companies from Airtable:', error)
+    console.error('Error fetching companies from Supabase:', error)
     // Fallback to empty array instead of throwing
     return []
   }
