@@ -104,17 +104,21 @@ export async function GET() {
           <div class="container">
             <h1>Review Duplicates</h1>
             <div class="subtitle">Find and merge duplicate entries</div>
-            <button onclick="loadCandidates('projects')" class="btn-load">Load Project Duplicates</button>
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+              <button onclick="loadCandidates('projects')" class="btn-load" style="background: #3b82f6;">Review Projects</button>
+              <button onclick="loadCandidates('companies')" class="btn-load" style="background: #8b5cf6;">Review Companies</button>
+            </div>
           </div>
         \`;
         return;
       }
 
       const c = candidates[currentIndex];
+      const typeLabel = activeTab === 'projects' ? 'Projects' : 'Companies';
       app.innerHTML = \`
         <div class="container">
           <h1>Review Duplicates</h1>
-          <p class="subtitle">\${currentIndex + 1} of \${candidates.length}</p>
+          <p class="subtitle">\${typeLabel} • \${currentIndex + 1} of \${candidates.length}</p>
 
           <div class="grid">
             <div class="card card-keep">
