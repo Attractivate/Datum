@@ -12,14 +12,36 @@ const supabase = createClient(
 
 export async function GET() {
   try {
-    const { data, count } = await supabase
+    // Get count
+    const { count, error: countError } = await supabase
       .from('projects')
-      .select('id, name, location, state, developer_id, owner_id, nrc_docket, capacity_mw', { count: 'exact' })
-      .limit(5)
+      .select('*', { count: 'exact', head: true })
+
+    // Get sample projects
+    const { data, error: dataError } = await supabase
+      .from('projects')
+      .select('id, name, location, state, developer_id, owner_id, nrc_docket, capacity_mw')
+      .limit(20)
+
+    if (countError) {
+      return Response.json({ error: `Count error: ${countError.message}` }, { status: 500 })
+    }
+
+    if (dataError) {
+      return Response.json({ error: `Data error: ${dataError.message}` }, { status: 500 })
+    }
+
+    // Search for Fermi projects
+    const { data: fermiProjects } = await supabase
+      .from('projects')
+      .select('id, name')
+      .ilike('name', '%fermi%')
 
     return Response.json({
       total_projects: count,
-      sample: data
+      sample: data,
+      fermi_projects: fermiProjects || [],
+      fermi_count: fermiProjects?.length || 0
     })
   } catch (error) {
     return Response.json(
