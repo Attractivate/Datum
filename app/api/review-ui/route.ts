@@ -155,7 +155,7 @@ export async function GET() {
         html += '<td><div class="radio-group">';
         html += '<label><input type="radio" name="action-' + i + '" value="merge" ' + (selected === 'merge' ? 'checked' : '') + ' onchange="updateSelection(' + i + ', ' + "'merge'" + ')"> Merge</label>';
         html += '<label><input type="radio" name="action-' + i + '" value="skip" ' + (selected === 'skip' ? 'checked' : '') + ' onchange="updateSelection(' + i + ', ' + "'skip'" + ')"> Skip</label>';
-        html += '<label><input type="radio" name="action-' + i + '" value="do-not-merge" ' + (selected === 'do-not-merge' ? 'checked' : '') + ' onchange="updateSelection(' + i + ', ' + "'do-not-merge'" + ')"> Don' + "'t Merge</label>';
+        html += '<label><input type="radio" name="action-' + i + '" value="do-not-merge" ' + (selected === 'do-not-merge' ? 'checked' : '') + ' onchange="updateSelection(' + i + ', ' + "'do-not-merge'" + ')"> Don&apos;t Merge</label>';
         html += '</div></td></tr>';
       }
 
