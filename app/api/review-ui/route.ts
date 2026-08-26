@@ -222,7 +222,7 @@ export async function GET() {
       app.innerHTML = html;
     }
 
-    // Initial load
+    // Initial load - table view v2
     loadCandidates('projects');
   </script>
 </body>
