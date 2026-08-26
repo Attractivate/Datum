@@ -1,6 +1,7 @@
 /**
  * POST /api/scan-companies
  * Scan for duplicate companies
+ * Finds companies with similar names that should be merged
  */
 
 import { scanForDuplicateCompanies } from '@/lib/company-deduplication'
