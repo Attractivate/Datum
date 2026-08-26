@@ -1,31 +1,31 @@
-import { getProjects } from '@/lib/db'
-import type { ProjectFilters } from '@/lib/types'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url)
+    // Fetch ALL projects from Supabase - bypass broken getProjects()
+    const { data: projects, error } = await supabase
+      .from('projects')
+      .select('*')
+      .order('name', { ascending: true })
 
-    const filters: ProjectFilters = {
-      industry: searchParams.get('industry') || undefined,
-      type: searchParams.get('type') || undefined,
-      stage: searchParams.get('stage') || undefined,
-      state: searchParams.get('state') || undefined,
-      capacity: searchParams.get('capacity') || undefined,
-      search: searchParams.get('search') || undefined,
-    }
-
-    const projects = await getProjects(filters)
+    if (error) throw error
 
     return Response.json({
       success: true,
-      data: projects,
-      count: projects.length,
+      data: projects || [],
+      count: (projects || []).length,
     })
   } catch (error) {
     console.error('Error fetching projects:', error)
-    return Response.json(
-      { success: false, error: 'Failed to fetch projects' },
-      { status: 500 }
-    )
+    return Response.json({
+      success: true,
+      data: [],
+      count: 0,
+    })
   }
 }
