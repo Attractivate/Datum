@@ -34,7 +34,15 @@ export default function MergePage() {
       const data = await res.json()
 
       if (data.success) {
-        const results = recordType === 'projects' ? data.data.projects : data.data.companies
+        let results = recordType === 'projects' ? data.data.projects : data.data.companies
+        // For projects, filter to show only non-duplicates in source selection
+        if (recordType === 'projects' && results) {
+          // Show all results but mark which ones are already duplicates
+          results = results.map(r => ({
+            ...r,
+            isDuplicate: r.is_duplicate === true
+          }))
+        }
         setResults(results || [])
       } else {
         setResults([])
@@ -56,6 +64,16 @@ export default function MergePage() {
     if (selectedSource.id === selectedDuplicate.id) {
       setMessage('Cannot merge a record with itself')
       return
+    }
+
+    // Prevent merging if source record is already marked as duplicate
+    if ('is_duplicate' in selectedSource && selectedSource.is_duplicate) {
+      setMessage('⚠️ Error: Source record is already marked as a duplicate. Please select a different source record.')
+      return
+    }
+
+    if ('is_duplicate' in selectedDuplicate && !selectedDuplicate.is_duplicate) {
+      setMessage('⚠️ Warning: Duplicate record should be marked as duplicate. Proceeding anyway...')
     }
 
     setLoading(true)
