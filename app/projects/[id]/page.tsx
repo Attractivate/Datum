@@ -164,6 +164,16 @@ export default function ProjectDetail({ params }: { params: Promise<{ id: string
         </div>
       </div>
 
+      {/* Project Description */}
+      {project.description && (
+        <div style={{ background: '#FFFFFF', border: '1px solid #D6D9E8', borderRadius: '4px', padding: '1.2rem', boxShadow: '0 1px 2px rgba(28,1,64,.06)' }}>
+          <h2 style={{ fontFamily: 'Chivo,sans-serif', fontWeight: 700, fontSize: '1rem', color: '#1C0140', margin: '0 0 0.8rem 0' }}>Project Details</h2>
+          <p style={{ fontFamily: 'Source Sans 3,sans-serif', fontSize: '0.95rem', color: '#5A5D78', lineHeight: 1.6, margin: 0 }}>
+            {project.description}
+          </p>
+        </div>
+      )}
+
       {/* Stats Tiles */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(12rem, 1fr))', gap: '1rem' }}>
         <div style={{ background: '#FFFFFF', border: '1px solid #D6D9E8', borderRadius: '4px', padding: '0.85rem 1rem 0.95rem', boxShadow: '0 1px 2px rgba(28,1,64,.06)' }}>
@@ -350,24 +360,44 @@ export default function ProjectDetail({ params }: { params: Promise<{ id: string
                     <div style={{ display: 'flex', flexDirection: 'column', padding: '0.6rem', borderRadius: '3px', background: '#F9FAFB', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.background = '#F0F4FF'} onMouseLeave={(e) => e.currentTarget.style.background = '#F9FAFB'}>
                       <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#376BE9' }}>{companiesMap[project.owner_id].name}</div>
                       <div style={{ fontSize: '0.75rem', color: '#5A5D78', marginTop: '0.1rem' }}>Owner</div>
+                      {companiesMap[project.owner_id].description && (
+                        <div style={{ fontSize: '0.7rem', color: '#5A5D78', marginTop: '0.3rem', lineHeight: 1.4 }}>
+                          {companiesMap[project.owner_id].description.substring(0, 100)}...
+                        </div>
+                      )}
                     </div>
                   )}
                   {project.developer_id && companiesMap[project.developer_id] && (
                     <div style={{ display: 'flex', flexDirection: 'column', padding: '0.6rem', borderRadius: '3px', background: '#F9FAFB', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.background = '#F0F4FF'} onMouseLeave={(e) => e.currentTarget.style.background = '#F9FAFB'}>
                       <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#376BE9' }}>{companiesMap[project.developer_id].name}</div>
                       <div style={{ fontSize: '0.75rem', color: '#5A5D78', marginTop: '0.1rem' }}>Developer</div>
+                      {companiesMap[project.developer_id].description && (
+                        <div style={{ fontSize: '0.7rem', color: '#5A5D78', marginTop: '0.3rem', lineHeight: 1.4 }}>
+                          {companiesMap[project.developer_id].description.substring(0, 100)}...
+                        </div>
+                      )}
                     </div>
                   )}
                   {project.epc_id && companiesMap[project.epc_id] && (
                     <div style={{ display: 'flex', flexDirection: 'column', padding: '0.6rem', borderRadius: '3px', background: '#F9FAFB', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.background = '#F0F4FF'} onMouseLeave={(e) => e.currentTarget.style.background = '#F9FAFB'}>
                       <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#376BE9' }}>{companiesMap[project.epc_id].name}</div>
                       <div style={{ fontSize: '0.75rem', color: '#5A5D78', marginTop: '0.1rem' }}>EPC</div>
+                      {companiesMap[project.epc_id].description && (
+                        <div style={{ fontSize: '0.7rem', color: '#5A5D78', marginTop: '0.3rem', lineHeight: 1.4 }}>
+                          {companiesMap[project.epc_id].description.substring(0, 100)}...
+                        </div>
+                      )}
                     </div>
                   )}
                   {project.oem_id && companiesMap[project.oem_id] && (
                     <div style={{ display: 'flex', flexDirection: 'column', padding: '0.6rem', borderRadius: '3px', background: '#F9FAFB', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.background = '#F0F4FF'} onMouseLeave={(e) => e.currentTarget.style.background = '#F9FAFB'}>
                       <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#376BE9' }}>{companiesMap[project.oem_id].name}</div>
                       <div style={{ fontSize: '0.75rem', color: '#5A5D78', marginTop: '0.1rem' }}>OEM</div>
+                      {companiesMap[project.oem_id].description && (
+                        <div style={{ fontSize: '0.7rem', color: '#5A5D78', marginTop: '0.3rem', lineHeight: 1.4 }}>
+                          {companiesMap[project.oem_id].description.substring(0, 100)}...
+                        </div>
+                      )}
                     </div>
                   )}
                 </>
