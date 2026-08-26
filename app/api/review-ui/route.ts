@@ -1,4 +1,5 @@
 export async function GET() {
+  // Force rebuild - table view
   const html = `
 <!DOCTYPE html>
 <html>
