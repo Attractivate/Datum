@@ -35,40 +35,55 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       data = airtableData
     }
 
-    // Fetch associated companies
-    const companies: any[] = []
-    if (data.developer_id) {
+    // Fetch all associated companies for this project
+    const { data: projectCompanies } = await supabase
+      .from('companies')
+      .select('id, name, role, location, website, description, project_id')
+      .eq('project_id', data.id)
+      .order('created_at', { ascending: true })
+
+    // Legacy: fetch developer/owner if not in companies list
+    const companies: any[] = projectCompanies || []
+    const companyIds = new Set(companies.map(c => c.id))
+
+    if (data.developer_id && !companyIds.has(data.developer_id)) {
       const { data: devCompany } = await supabase
         .from('companies')
         .select('*')
         .eq('id', data.developer_id)
         .single()
-
       if (devCompany) companies.push({ ...devCompany, role: 'developer' })
     }
 
-    if (data.owner_id && data.owner_id !== data.developer_id) {
+    if (data.owner_id && data.owner_id !== data.developer_id && !companyIds.has(data.owner_id)) {
       const { data: ownerCompany } = await supabase
         .from('companies')
         .select('*')
         .eq('id', data.owner_id)
         .single()
-
       if (ownerCompany) companies.push({ ...ownerCompany, role: 'owner' })
     }
 
+    // Fetch project milestones (with detail visible)
+    const { data: milestones } = await supabase
+      .from('milestones')
+      .select('id, title, description, detail_type, date_target, status, company_id, company_role, amount_value, amount_currency, created_at, updated_at')
+      .eq('project_id', data.id)
+      .order('date_target', { ascending: true, nullsFirst: true })
+
     // Fetch project updates
-    const { data: updates, error: updatesError } = await supabase
+    const { data: updates } = await supabase
       .from('project_updates')
       .select('*')
-      .eq('project_id', id)
+      .eq('project_id', data.id)
       .order('created_at', { ascending: false })
 
     return Response.json({
       success: true,
       data: {
         ...data,
-        updates: updates || []
+        updates: updates || [],
+        milestones: milestones || []
       },
       companies
     })

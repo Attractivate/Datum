@@ -27,9 +27,14 @@ interface CompanyData {
 
 interface MilestoneData {
   title: string
-  description?: string
+  description: string // Rich detail: "6 Siemens Energy SGT-800 Gas Turbines Arrived at Port of Houston"
+  detailType?: string // award, permit, financing, infrastructure, regulatory, etc
   date?: string // YYYY-MM or YYYY-MM-DD
   status?: 'planned' | 'in_progress' | 'complete'
+  companyName?: string // Link to company if applicable
+  companyRole?: string // owner, epc_nuclear, financing, equipment_supplier, etc
+  amountValue?: number
+  amountCurrency?: string
 }
 
 interface UpdateData {
@@ -163,19 +168,38 @@ export async function POST(request: Request) {
       }
     }
 
-    // Step 4: Create milestones (stored as special project_updates with milestone event type)
+    // Step 4: Create milestones in dedicated milestones table with rich detail
     if (payload.milestones && payload.milestones.length > 0) {
-      const milestonesToInsert = payload.milestones.map((milestone) => ({
-        project_id: payload.projectId,
-        event_type: `milestone_${(milestone.status || 'planned').toLowerCase()}`,
-        title: milestone.title,
-        description: milestone.description,
-        is_significant: true,
-        created_at: milestone.date ? new Date(milestone.date).toISOString() : new Date().toISOString(),
-      }))
+      const milestonesToInsert = []
+
+      for (const milestone of payload.milestones) {
+        // Find company ID if company name provided
+        let companyId = null
+        if (milestone.companyName) {
+          const { data: company } = await supabase
+            .from('companies')
+            .select('id')
+            .eq('name', milestone.companyName)
+            .limit(1)
+          companyId = company?.[0]?.id
+        }
+
+        milestonesToInsert.push({
+          project_id: payload.projectId,
+          title: milestone.title,
+          description: milestone.description, // Rich detail visible
+          detail_type: milestone.detailType,
+          date_target: milestone.date ? new Date(milestone.date).toISOString().split('T')[0] : null,
+          status: milestone.status || 'planned',
+          company_id: companyId,
+          company_role: milestone.companyRole,
+          amount_value: milestone.amountValue,
+          amount_currency: milestone.amountCurrency,
+        })
+      }
 
       const { data: createdMilestones, error: milestonesError } = await supabase
-        .from('project_updates')
+        .from('milestones')
         .insert(milestonesToInsert)
         .select('id')
 
@@ -184,7 +208,6 @@ export async function POST(request: Request) {
       } else {
         const newMilestoneIds = createdMilestones?.map((m) => m.id) || []
         milestoneIds.push(...newMilestoneIds)
-        updateIds.push(...newMilestoneIds)
         console.log(`[Enrich] Created ${newMilestoneIds.length} milestones`)
       }
     }
