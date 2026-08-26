@@ -43,21 +43,17 @@ export async function GET() {
       .select('id, name')
       .ilike('name', '%matador%')
 
-    // Search for projects starting with "project"
-    const { data: projectProjects } = await supabase
+    // Get all matador projects with details
+    const { data: matadorFull } = await supabase
       .from('projects')
-      .select('id, name')
-      .ilike('name', 'project%')
+      .select('*')
+      .ilike('name', '%matador%')
 
     return Response.json({
       total_projects: count,
-      sample: data,
-      fermi_projects: fermiProjects || [],
       fermi_count: fermiProjects?.length || 0,
-      matador_projects: matadorProjects || [],
       matador_count: matadorProjects?.length || 0,
-      project_projects: projectProjects || [],
-      project_count: projectProjects?.length || 0
+      matador_full: matadorFull || []
     })
   } catch (error) {
     return Response.json(
