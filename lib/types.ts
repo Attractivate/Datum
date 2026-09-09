@@ -144,7 +144,8 @@ export interface Contact {
 }
 
 export interface ContactWithCompany extends Contact {
-  company?: Company
+  company_name?: string
+  company_industry?: string
 }
 
 export interface Source {
