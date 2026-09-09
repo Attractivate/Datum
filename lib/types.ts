@@ -134,10 +134,11 @@ export interface Contact {
   id: string
   name: string
   title: string
-  company_id: string
+  company_id?: string | null
   email: string
   phone: string
   linkedin_url: string
+  company?: string
   created_at: string
   updated_at: string
 }
