@@ -15,7 +15,7 @@ export async function GET(request: Request) {
       search: searchParams.get('search') || undefined,
     }
 
-    console.log('[GET /api/contacts] Called with limit:', limit, 'offset:', offset)
+    console.log('[GET /api/contacts] Called with limit:', limit, 'offset:', offset, 'v2')
 
     const { data, total } = await getContacts(filters, limit, offset)
 
