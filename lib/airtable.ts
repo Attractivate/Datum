@@ -244,40 +244,52 @@ export function mapAirtableCompanyRecord(record: any) {
 }
 
 export function mapAirtableContactRecord(record: any) {
-  const fields = record.fields || {}
+  // Support both field names (from Airtable client) and field IDs (from raw API)
+  const byName = record.fields || {}
+  const byId = record.cellValuesByFieldId || {}
 
-  // Use exact field names from Airtable Contacts table
+  // Map field IDs to field names for Contacts table
+  const fields: any = {}
+  fields['Name'] = byName['Name'] || byId['flddWgEDt3mDFwAyN'] || ''
+  fields['Title'] = byName['Title'] || byId['fld1kdTKXkcVoSTAp'] || ''
+  fields['Email / Phone'] = byName['Email / Phone'] || byId['fldhKCT76NnWDp5I1'] || ''
+  fields['Company'] = byName['Company'] || byId['fldqf509i6ccgZ391']
+  fields['LinkedIn URL'] = byName['LinkedIn URL'] || byId['fldWsjpxvlPnVgbxl'] || ''
+  fields['Role Type'] = byName['Role Type'] || byId['fldoIsRWZUM1POfY3'] || ''
+
   const name = fields['Name'] || 'Unnamed Contact'
   const title = fields['Title'] || ''
 
   // Handle Email / Phone field (could be separate fields or combined)
-  let email = fields['Email'] || fields['email'] || ''
-  let phone = fields['Phone'] || fields['phone'] || ''
+  let email = fields['Email'] || ''
+  let phone = fields['Phone'] || ''
 
   // If combined field exists, try to parse it
   const emailPhone = fields['Email / Phone'] || ''
   if (emailPhone && !email && !phone) {
-    if (emailPhone.includes('@')) {
-      email = emailPhone
-    } else if (emailPhone.match(/^\d/)) {
-      phone = emailPhone
-    } else {
-      email = emailPhone
+    // Split on pipe for combined email|phone format
+    const parts = emailPhone.split('|').map((s: string) => s.trim())
+    if (parts.length > 0) {
+      email = parts[0] // First part is email
+      if (parts.length > 1) {
+        phone = parts[1] // Second part is phone
+      }
     }
   }
 
-  // Handle Company linked record
+  // Handle Company linked record (could be array of record IDs or objects with id/name)
   let company_id = null
   if (fields['Company']) {
     if (Array.isArray(fields['Company'])) {
-      company_id = fields['Company'][0]
+      const firstCompany = fields['Company'][0]
+      company_id = firstCompany?.id || firstCompany?.name || firstCompany
     } else {
       company_id = fields['Company']
     }
   }
 
   // LinkedIn URL field
-  const linkedin = fields['LinkedIn URL'] || fields['LinkedIn'] || ''
+  const linkedin = fields['LinkedIn URL'] || ''
 
   return {
     id: record.id,
@@ -287,6 +299,7 @@ export function mapAirtableContactRecord(record: any) {
     email,
     phone,
     linkedin_url: linkedin,
+    company: fields['Role Type'] || '', // Store company name from Role Type field
     created_at: record.createdTime,
     updated_at: record.createdTime,
   }

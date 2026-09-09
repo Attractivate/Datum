@@ -123,7 +123,7 @@ interface ContactWithCompany extends Contact {
 }
 
 export default function ContactsPage() {
-  const [contacts, setContacts] = useState<ContactWithCompany[]>(mockContacts)
+  const [contacts, setContacts] = useState<ContactWithCompany[]>([])
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
   const [role, setRole] = useState('All roles')
@@ -157,7 +157,7 @@ export default function ContactsPage() {
         const data = await res.json()
 
         // Enrich contacts with company info
-        const enrichedContacts = (data.data || mockContacts).map((contact: any) => ({
+        const enrichedContacts = (data.data || []).map((contact: any) => ({
           ...contact,
           company_name: contact.company_id ? companyLookup[contact.company_id]?.name : contact.company,
           company_industry: contact.company_id ? companyLookup[contact.company_id]?.industry : contact.industry
@@ -166,7 +166,7 @@ export default function ContactsPage() {
         setContacts(enrichedContacts)
       } catch (error) {
         console.error('Failed to fetch contacts:', error)
-        setContacts(mockContacts)
+        setContacts([])
       } finally {
         setLoading(false)
       }
@@ -265,7 +265,9 @@ export default function ContactsPage() {
                   <div style={{ fontWeight: 500, color: '#1a1a1a' }}>{contact.title}</div>
                 </td>
                 <td style={{ padding: '0.8rem', fontSize: '0.9rem' }}>
-                  <div style={{ fontWeight: 600, color: '#376BE9' }}>{(contact as ContactWithCompany).company_name || '—'}</div>
+                  <div style={{ fontWeight: 600, color: '#376BE9' }}>
+                    {(contact as any).company || (contact as ContactWithCompany).company_name || '—'}
+                  </div>
                 </td>
                 <td style={{ padding: '0.8rem', fontSize: '0.9rem' }}>
                   <span style={{ background: '#f0f0f0', color: '#666', padding: '0.25rem 0.5rem', borderRadius: '2px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
@@ -275,8 +277,8 @@ export default function ContactsPage() {
                 <td style={{ padding: '0.8rem', fontSize: '0.9rem' }}>
                   {contact.email ? (
                     <>
-                      <div><a href={`mailto:${contact.email}`} style={{ color: '#376BE9', textDecoration: 'none', fontSize: '0.85rem' }}>{contact.email}</a></div>
-                      {contact.phone && <div style={{ fontSize: '0.8rem', color: '#666' }}>{contact.phone}</div>}
+                      <div><a href={`mailto:${contact.email}`} style={{ color: '#376BE9', textDecoration: 'none', fontSize: '0.85rem' }}>{contact.email.split('|')[0]?.trim() || contact.email}</a></div>
+                      {contact.phone && <div style={{ fontSize: '0.8rem', color: '#666' }}>📞 {contact.phone.split('|')[0]?.trim() || contact.phone}</div>}
                     </>
                   ) : (
                     <span style={{ color: '#999' }}>—</span>
