@@ -38,7 +38,7 @@ export default function MergePage() {
         // For projects, filter to show only non-duplicates in source selection
         if (recordType === 'projects' && results) {
           // Show all results but mark which ones are already duplicates
-          results = results.map(r => ({
+          results = results.map((r: any) => ({
             ...r,
             isDuplicate: r.is_duplicate === true
           }))
